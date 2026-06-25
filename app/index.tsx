@@ -218,16 +218,18 @@ export default function MapScreen() {
         )}
       </View>
 
-      {/* Points badge - always visible, tap → leaderboard */}
-      <TouchableOpacity
-        style={styles.pointsPill}
-        onPress={() => router.push('/profile?tab=board')}
-        activeOpacity={0.85}
-      >
-        <Ionicons name="trophy" size={14} color={theme.colors.accent} />
-        <Text style={styles.pointsPillText}>{points} נקודות</Text>
-        <Ionicons name="person-outline" size={14} color={theme.colors.primaryLight} />
-      </TouchableOpacity>
+      {/* Points badge - always visible, centered, tap → leaderboard */}
+      <View style={styles.pointsPillWrap} pointerEvents="box-none">
+        <TouchableOpacity
+          style={styles.pointsPill}
+          onPress={() => router.push({ pathname: '/profile', params: { tab: 'board' } })}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="trophy" size={14} color={theme.colors.accent} />
+          <Text style={styles.pointsPillText}>{points} נקודות</Text>
+          <Ionicons name="person-outline" size={14} color={theme.colors.primaryLight} />
+        </TouchableOpacity>
+      </View>
 
       {pois.length > 0 && (
         <ScrollView
@@ -363,19 +365,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   headerBadgeText: { fontSize: 9, fontWeight: '900', color: theme.colors.accentDark },
-  pointsPill: {
+  pointsPillWrap: {
     position: 'absolute',
-    top: theme.spacing(8),
-    alignSelf: 'center',
-    left: theme.spacing(2),
-    right: theme.spacing(2),
+    top: theme.spacing(9),
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  pointsPill: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: theme.spacing(0.75),
     backgroundColor: theme.colors.surface,
     borderRadius: 999,
-    paddingVertical: theme.spacing(1),
+    paddingVertical: theme.spacing(0.875),
     paddingHorizontal: theme.spacing(2),
     ...theme.shadow,
   },

@@ -73,7 +73,7 @@ function RankBar({ progress, nextName, pointsToNext }: { progress: number; nextN
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { profile } = useLocalProfile();
+  const { profile, clearProfile } = useLocalProfile();
   const { signOut } = useAuth();
   const params = useLocalSearchParams<{ tab?: string }>();
 
@@ -330,7 +330,7 @@ export default function ProfileScreen() {
 
         <TouchableOpacity
           style={[styles.menuRow, styles.menuRowLast]}
-          onPress={() => config.hasSupabase ? signOut() : Alert.alert('יציאה', 'אין חשבון מחובר')}
+          onPress={() => config.hasSupabase ? signOut() : clearProfile()}
           activeOpacity={0.8}
         >
           <View style={[styles.menuIcon, { backgroundColor: '#fee2e2' }]}>
