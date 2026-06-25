@@ -197,6 +197,7 @@ export default function MapScreen() {
         )}
       </MapView>
 
+      {/* Search bar */}
       <View style={styles.searchPill}>
         <TextInput
           style={styles.searchInput}
@@ -216,6 +217,17 @@ export default function MapScreen() {
           </TouchableOpacity>
         )}
       </View>
+
+      {/* Points badge - always visible, tap → leaderboard */}
+      <TouchableOpacity
+        style={styles.pointsPill}
+        onPress={() => router.push('/profile?tab=board')}
+        activeOpacity={0.85}
+      >
+        <Ionicons name="trophy" size={14} color={theme.colors.accent} />
+        <Text style={styles.pointsPillText}>{points} נקודות</Text>
+        <Ionicons name="person-outline" size={14} color={theme.colors.primaryLight} />
+      </TouchableOpacity>
 
       {pois.length > 0 && (
         <ScrollView
@@ -351,4 +363,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   headerBadgeText: { fontSize: 9, fontWeight: '900', color: theme.colors.accentDark },
+  pointsPill: {
+    position: 'absolute',
+    top: theme.spacing(8),
+    alignSelf: 'center',
+    left: theme.spacing(2),
+    right: theme.spacing(2),
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing(0.75),
+    backgroundColor: theme.colors.surface,
+    borderRadius: 999,
+    paddingVertical: theme.spacing(1),
+    paddingHorizontal: theme.spacing(2),
+    ...theme.shadow,
+  },
+  pointsPillText: { fontSize: 14, fontWeight: '800', color: theme.colors.primary },
 });

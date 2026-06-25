@@ -1,0 +1,418 @@
+import { useCallback, useState } from 'react';
+import {
+  Alert,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useFocusEffect } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { theme } from '@/ui/theme';
+import {
+  getAllUsers,
+  deleteUser,
+  resetUserPoints,
+  formatLastActive,
+  type UserEntry,
+} from '@/state/userRegistry';
+import { TIERS } from '@/state/gameState';
+
+function getTier(points: number) {
+  let tier = TIERS[0];
+  for (const t of TIERS) { if (points >= t.min) tier = t; }
+  return tier;
+}
+
+function StatCard({ value, label, icon, color }: { value: string | number; label: string; icon: string; color: string }) {
+  return (
+    <View style={[styles.statCard, { borderTopColor: color }]}>
+      <Ionicons name={icon as any} size={20} color={color} />
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
+  );
+}
+
+export default function AdminScreen() {
+  const [users, setUsers] = useState<UserEntry[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    const data = await getAllUsers();
+    setUsers(data);
+  }, []);
+
+  useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  };
+
+  const onReset = (user: UserEntry) => {
+    if (user.id.startsWith('npc_')) {
+      Alert.alert('לא ניתן', 'שחקני AI אינם ניתנים לעריכה.');
+      return;
+    }
+    Alert.alert(
+      'איפוס נקודות',
+      `לאפס את הנקודות של ${user.name} ל-0?`,
+      [
+        { text: 'ביטול', style: 'cancel' },
+        {
+          text: 'אפס', style: 'destructive',
+          onPress: async () => { await resetUserPoints(user.id); load(); },
+        },
+      ],
+    );
+  };
+
+  const onDelete = (user: UserEntry) => {
+    if (user.id.startsWith('npc_')) {
+      Alert.alert('לא ניתן', 'שחקני AI אינם ניתנים למחיקה.');
+      return;
+    }
+    Alert.alert(
+      'מחיקת משתמש',
+      `למחוק את ${user.name} לצמיתות?`,
+      [
+        { text: 'ביטול', style: 'cancel' },
+        {
+          text: 'מחק', style: 'destructive',
+          onPress: async () => { await deleteUser(user.id); load(); },
+        },
+      ],
+    );
+  };
+
+  const totalPoints   = users.reduce((s, u) => s + u.points,    0);
+  const totalQuizzes  = users.reduce((s, u) => s + u.quizCount, 0);
+  const totalTours    = users.reduce((s, u) => s + u.tourCount,  0);
+  const activeNow     = users.filter((u) => u.isActive).length;
+  const realUsers     = users.filter((u) => !u.id.startsWith('npc_'));
+
+  return (
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
+    >
+      {/* Header */}
+      <LinearGradient colors={['#0a2a1e', '#0f3d2e']} style={styles.header}>
+        <View style={styles.headerTop}>
+          <View style={styles.adminBadge}>
+            <Ionicons name="shield-checkmark" size={14} color="#e8a33d" />
+            <Text style={styles.adminBadgeText}>ADMIN</Text>
+          </View>
+          <Text style={styles.headerTitle}>פאנל ניהול</Text>
+        </View>
+        <Text style={styles.headerSub}>
+          {realUsers.length} משתמשים אמיתיים · {users.length} סה"כ
+        </Text>
+      </LinearGradient>
+
+      {/* Stats */}
+      <View style={styles.statsRow}>
+        <StatCard value={users.length}  label="משתמשים"  icon="people-outline"    color="#1c6b4f" />
+        <StatCard value={activeNow}     label="פעילים"   icon="radio-button-on"   color="#22a06b" />
+        <StatCard value={totalPoints}   label="נקודות"   icon="trophy-outline"    color="#e8a33d" />
+        <StatCard value={totalQuizzes}  label="חידונים"  icon="help-circle-outline" color="#6c63ff" />
+      </View>
+
+      {/* Activity bar */}
+      <View style={styles.activityCard}>
+        <Text style={styles.activityTitle}>פעילות לפי סוג</Text>
+        <View style={styles.activityRow}>
+          <View style={styles.activityItem}>
+            <Text style={styles.activityNum}>{totalTours}</Text>
+            <Text style={styles.activityLabel}>סיורי שמע</Text>
+          </View>
+          <View style={styles.activityDivider} />
+          <View style={styles.activityItem}>
+            <Text style={styles.activityNum}>{users.reduce((s, u) => s + u.videoCount, 0)}</Text>
+            <Text style={styles.activityLabel}>סרטוני וידאו</Text>
+          </View>
+          <View style={styles.activityDivider} />
+          <View style={styles.activityItem}>
+            <Text style={styles.activityNum}>{totalQuizzes}</Text>
+            <Text style={styles.activityLabel}>חידונים</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Users list */}
+      <View style={styles.listHeader}>
+        <Text style={styles.listTitle}>כל המשתמשים</Text>
+        <TouchableOpacity onPress={onRefresh} hitSlop={8}>
+          <Ionicons name="refresh-outline" size={18} color={theme.colors.primaryLight} />
+        </TouchableOpacity>
+      </View>
+
+      {users.map((user, idx) => {
+        const tier = getTier(user.points);
+        const isExpanded = expandedId === user.id;
+        const isNpc = user.id.startsWith('npc_');
+        return (
+          <TouchableOpacity
+            key={user.id}
+            style={[styles.userCard, idx === 0 && styles.userCardFirst]}
+            onPress={() => setExpandedId(isExpanded ? null : user.id)}
+            activeOpacity={0.8}
+          >
+            {/* Rank number */}
+            <Text style={styles.rankNum}>#{idx + 1}</Text>
+
+            {/* Avatar */}
+            <View style={[styles.avatar, isNpc && styles.avatarNpc]}>
+              <Text style={styles.avatarText}>{user.name.charAt(0)}</Text>
+            </View>
+
+            {/* Info */}
+            <View style={styles.userInfo}>
+              <View style={styles.userNameRow}>
+                <Text style={styles.userName}>{user.name}</Text>
+                {isNpc && <View style={styles.npcBadge}><Text style={styles.npcBadgeText}>AI</Text></View>}
+                {user.isActive && <View style={styles.onlineDot} />}
+              </View>
+              <Text style={styles.userTier}>{tier.emoji} {tier.name}</Text>
+            </View>
+
+            {/* Points */}
+            <View style={styles.userPoints}>
+              <Text style={styles.userPointsNum}>{user.points}</Text>
+              <Text style={styles.userPointsLabel}>נק'</Text>
+            </View>
+
+            <Ionicons
+              name={isExpanded ? 'chevron-up' : 'chevron-down'}
+              size={16}
+              color={theme.colors.textMuted}
+            />
+
+            {/* Expanded details */}
+            {isExpanded && (
+              <View style={styles.expanded}>
+                <View style={styles.expandedStats}>
+                  <View style={styles.expandedStat}>
+                    <Text style={styles.expandedNum}>{user.quizCount}</Text>
+                    <Text style={styles.expandedLabel}>חידונים</Text>
+                  </View>
+                  <View style={styles.expandedStat}>
+                    <Text style={styles.expandedNum}>{user.tourCount}</Text>
+                    <Text style={styles.expandedLabel}>סיורים</Text>
+                  </View>
+                  <View style={styles.expandedStat}>
+                    <Text style={styles.expandedNum}>{user.videoCount}</Text>
+                    <Text style={styles.expandedLabel}>סרטונים</Text>
+                  </View>
+                  <View style={styles.expandedStat}>
+                    <Text style={styles.expandedNum}>{formatLastActive(user.lastActive)}</Text>
+                    <Text style={styles.expandedLabel}>פעילות</Text>
+                  </View>
+                </View>
+
+                {!isNpc && (
+                  <View style={styles.expandedActions}>
+                    <TouchableOpacity
+                      style={styles.actionBtnWarn}
+                      onPress={() => onReset(user)}
+                      activeOpacity={0.85}
+                    >
+                      <Ionicons name="refresh-circle-outline" size={16} color="#b45309" />
+                      <Text style={styles.actionBtnWarnText}>איפוס נקודות</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.actionBtnDanger}
+                      onPress={() => onDelete(user)}
+                      activeOpacity={0.85}
+                    >
+                      <Ionicons name="trash-outline" size={16} color="#fff" />
+                      <Text style={styles.actionBtnDangerText}>הסרת משתמש</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                {isNpc && (
+                  <Text style={styles.npcNote}>שחקן AI - לא ניתן לעריכה</Text>
+                )}
+              </View>
+            )}
+          </TouchableOpacity>
+        );
+      })}
+
+      <Text style={styles.footer}>
+        * שחקני AI משמשים להשלמת לוח התוצאות{'\n'}
+        הנתונים מאוחסנים מקומית במכשיר
+      </Text>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: theme.colors.background },
+  content:   { paddingBottom: theme.spacing(5) },
+
+  header: { padding: theme.spacing(2.5), paddingTop: theme.spacing(3) },
+  headerTop: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between' },
+  headerTitle: { fontSize: 22, fontWeight: '800', color: '#fff' },
+  adminBadge: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(232,163,61,0.18)',
+    borderRadius: 999,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(232,163,61,0.4)',
+  },
+  adminBadgeText: { fontSize: 11, fontWeight: '800', color: '#e8a33d', letterSpacing: 1 },
+  headerSub: { fontSize: 13, color: '#9bbfaf', textAlign: 'right', marginTop: theme.spacing(0.75) },
+
+  statsRow: {
+    flexDirection: 'row-reverse',
+    padding: theme.spacing(1.5),
+    gap: theme.spacing(1),
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radiusLg,
+    padding: theme.spacing(1.5),
+    alignItems: 'center',
+    gap: 4,
+    borderTopWidth: 3,
+    ...theme.shadowSoft,
+  },
+  statValue: { fontSize: 18, fontWeight: '800', color: theme.colors.text },
+  statLabel: { fontSize: 10, color: theme.colors.textMuted, textAlign: 'center' },
+
+  activityCard: {
+    backgroundColor: theme.colors.surface,
+    marginHorizontal: theme.spacing(1.5),
+    marginBottom: theme.spacing(1.5),
+    borderRadius: theme.radiusLg,
+    padding: theme.spacing(2),
+    ...theme.shadowSoft,
+  },
+  activityTitle: { fontSize: 13, fontWeight: '700', color: theme.colors.textMuted, textAlign: 'right', marginBottom: theme.spacing(1.5) },
+  activityRow: { flexDirection: 'row-reverse', justifyContent: 'space-around' },
+  activityItem: { alignItems: 'center', gap: 4 },
+  activityNum: { fontSize: 24, fontWeight: '800', color: theme.colors.primary },
+  activityLabel: { fontSize: 11, color: theme.colors.textMuted },
+  activityDivider: { width: 1, backgroundColor: theme.colors.border, marginVertical: 4 },
+
+  listHeader: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing(2),
+    marginBottom: theme.spacing(1),
+  },
+  listTitle: { fontSize: 16, fontWeight: '700', color: theme.colors.text },
+
+  userCard: {
+    backgroundColor: theme.colors.surface,
+    marginHorizontal: theme.spacing(1.5),
+    marginBottom: theme.spacing(1),
+    borderRadius: theme.radiusLg,
+    padding: theme.spacing(1.75),
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: theme.spacing(1.25),
+    flexWrap: 'wrap',
+    ...theme.shadowSoft,
+  },
+  userCardFirst: { borderWidth: 1.5, borderColor: theme.colors.accent + '66' },
+  rankNum: { fontSize: 12, fontWeight: '700', color: theme.colors.textMuted, width: 22, textAlign: 'center' },
+  avatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: theme.colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarNpc: { backgroundColor: theme.colors.surfaceAlt },
+  avatarText: { fontSize: 16, fontWeight: '800', color: '#fff' },
+  userInfo: { flex: 1 },
+  userNameRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: theme.spacing(0.75) },
+  userName: { fontSize: 15, fontWeight: '700', color: theme.colors.text },
+  npcBadge: {
+    backgroundColor: theme.colors.surfaceAlt,
+    borderRadius: 999,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+  },
+  npcBadgeText: { fontSize: 9, fontWeight: '800', color: theme.colors.textMuted, letterSpacing: 0.5 },
+  onlineDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#22a06b',
+  },
+  userTier: { fontSize: 12, color: theme.colors.textMuted, textAlign: 'right', marginTop: 2 },
+  userPoints: { alignItems: 'center' },
+  userPointsNum: { fontSize: 18, fontWeight: '800', color: theme.colors.primary },
+  userPointsLabel: { fontSize: 10, color: theme.colors.textMuted },
+
+  expanded: {
+    width: '100%',
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+    marginTop: theme.spacing(1),
+    paddingTop: theme.spacing(1.5),
+  },
+  expandedStats: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-around',
+    marginBottom: theme.spacing(1.5),
+  },
+  expandedStat: { alignItems: 'center', gap: 2 },
+  expandedNum: { fontSize: 15, fontWeight: '700', color: theme.colors.text },
+  expandedLabel: { fontSize: 10, color: theme.colors.textMuted },
+  expandedActions: {
+    flexDirection: 'row-reverse',
+    gap: theme.spacing(1),
+  },
+  actionBtnWarn: {
+    flex: 1,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: theme.spacing(1.25),
+    backgroundColor: '#fef3c7',
+    borderRadius: theme.radius,
+    borderWidth: 1,
+    borderColor: '#f59e0b44',
+  },
+  actionBtnWarnText: { fontSize: 13, fontWeight: '700', color: '#b45309' },
+  actionBtnDanger: {
+    flex: 1,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: theme.spacing(1.25),
+    backgroundColor: theme.colors.danger,
+    borderRadius: theme.radius,
+  },
+  actionBtnDangerText: { fontSize: 13, fontWeight: '700', color: '#fff' },
+  npcNote: { fontSize: 12, color: theme.colors.textMuted, textAlign: 'center', fontStyle: 'italic' },
+
+  footer: {
+    marginTop: theme.spacing(3),
+    fontSize: 11,
+    color: theme.colors.textMuted,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+});

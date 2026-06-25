@@ -56,6 +56,8 @@ function AuthGate() {
       <Stack.Screen name="saved" options={{ title: 'הסיורים שלי' }} />
       <Stack.Screen name="quiz/[id]" options={{ title: 'חידון' }} />
       <Stack.Screen name="profile" options={{ title: 'האזור האישי שלי' }} />
+      <Stack.Screen name="about"   options={{ title: 'אודות שבילית' }} />
+      <Stack.Screen name="admin"   options={{ title: 'פאנל ניהול', headerStyle: { backgroundColor: '#0a2a1e' } }} />
     </Stack>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import {
   Animated,
   Image,
@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { getCachedTour, getCachedPoi } from '@/state/store';
@@ -19,10 +19,12 @@ import { theme } from '@/ui/theme';
 import { wikiImage } from '@/ui/wikiImage';
 
 type PlayState = 'idle' | 'playing' | 'paused';
-const SPEEDS = [0.75, 1, 1.25, 1.5];
+const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
+const SPEED_LABELS: Record<number, string> = { 0.5: '0.5×', 0.75: '0.75×', 1: 'רגיל', 1.25: '1.25×', 1.5: '1.5×', 2: '2×' };
 
 export default function TourScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const tour = id ? getCachedTour(id) : undefined;
   const poi = id ? getCachedPoi(id) : undefined;
   const tts = getTtsProvider();
@@ -117,21 +119,20 @@ export default function TourScreen() {
   };
 
   const onMainPress = () => {
+    if (state === 'idle') return startSpeak(rate);
     if (state === 'playing') return tts.supportsPause ? pause() : stop();
     if (state === 'paused') return resume();
-    return startSpeak(rate);
   };
 
   const onSpeed = (speed: number) => {
     setRate(speed);
-    if (state !== 'idle') {
-      void tts.stop();
-      startSpeak(speed);
-    }
+    if (state !== 'idle') { void tts.stop(); startSpeak(speed); }
   };
 
-  const mainIcon =
-    state === 'playing' && tts.supportsPause ? 'pause' : state === 'playing' ? 'stop' : 'play';
+  // main button: play → pause (if supported) / stop (otherwise). paused → resume.
+  const mainIcon = state === 'idle' ? 'play' : state === 'paused' ? 'play' : tts.supportsPause ? 'pause' : 'stop';
+  // side stop button only when paused OR playing with pause support (so there's no double-stop)
+  const showStop = state !== 'idle' && (state === 'paused' || tts.supportsPause);
   const width = progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
 
   return (
@@ -155,10 +156,12 @@ export default function TourScreen() {
 
       <View style={styles.playerCard}>
         <View style={styles.playerRow}>
-          {state !== 'idle' && (
+          {showStop ? (
             <TouchableOpacity style={styles.sideBtn} onPress={stop} activeOpacity={0.85}>
               <Ionicons name="stop" size={22} color={theme.colors.primary} />
             </TouchableOpacity>
+          ) : (
+            <View style={styles.sideSpacer} />
           )}
           <TouchableOpacity style={styles.playBtn} onPress={onMainPress} activeOpacity={0.9}>
             <Ionicons name={mainIcon} size={36} color={theme.colors.accentDark} />
@@ -170,8 +173,8 @@ export default function TourScreen() {
           <Animated.View style={[styles.fill, { width }]} />
         </View>
 
-        <Text style={styles.speedLabel}>מהירות</Text>
-        <View style={styles.speedRow}>
+        <Text style={styles.speedLabel}>מהירות השמעה</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.speedRow}>
           {SPEEDS.map((s) => (
             <TouchableOpacity
               key={s}
@@ -180,12 +183,18 @@ export default function TourScreen() {
               activeOpacity={0.85}
             >
               <Text style={[styles.speedText, rate === s && styles.speedTextActive]}>
-                {s === 1 ? 'רגיל' : `${s}×`}
+                {SPEED_LABELS[s]}
               </Text>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
       </View>
+
+      <TouchableOpacity style={styles.profileLink} onPress={() => router.push('/profile')} activeOpacity={0.85}>
+        <Ionicons name="trophy-outline" size={16} color={theme.colors.primaryLight} />
+        <Text style={styles.profileLinkText}>האזור האישי שלי</Text>
+        <Ionicons name="chevron-back" size={14} color={theme.colors.primaryLight} />
+      </TouchableOpacity>
 
       <View style={styles.scriptCard}>
         {tour.text
@@ -281,10 +290,10 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginBottom: theme.spacing(1),
   },
-  speedRow: { flexDirection: 'row-reverse', gap: theme.spacing(1) },
+  speedRow: { flexDirection: 'row-reverse', gap: theme.spacing(0.75), paddingVertical: theme.spacing(0.5) },
   speedChip: {
-    flex: 1,
-    paddingVertical: theme.spacing(1),
+    paddingVertical: theme.spacing(0.875),
+    paddingHorizontal: theme.spacing(1.5),
     borderRadius: 999,
     borderWidth: 1,
     borderColor: theme.colors.border,
@@ -302,6 +311,13 @@ const styles = StyleSheet.create({
   },
   script: { fontSize: 18, lineHeight: 30, color: theme.colors.text, textAlign: 'right' },
   scriptSpacing: { marginTop: theme.spacing(2) },
+  profileLink: {
+    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center',
+    gap: theme.spacing(0.75), marginHorizontal: theme.spacing(2), marginBottom: theme.spacing(1),
+    backgroundColor: theme.colors.surface, borderRadius: theme.radiusLg,
+    paddingVertical: theme.spacing(1.5), ...theme.shadowSoft,
+  },
+  profileLinkText: { color: theme.colors.primaryLight, fontWeight: '700', fontSize: 14 },
   attrPill: {
     flexDirection: 'row-reverse',
     alignItems: 'center',

@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalProfile } from '@/auth/LocalProfile';
 import { useAuth } from '@/auth/AuthProvider';
@@ -24,6 +24,7 @@ import { countWords } from '@/domain/tourLength';
 import { TOUR_STYLE_LABELS } from '@/domain/types';
 import { wikiImage } from '@/ui/wikiImage';
 import { theme } from '@/ui/theme';
+import { upsertUser, isAdminUnlocked } from '@/state/userRegistry';
 
 const NPC_PLAYERS = [
   { name: 'רונית כ.', points: 920 },
@@ -74,19 +75,43 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { profile } = useLocalProfile();
   const { signOut } = useAuth();
+  const params = useLocalSearchParams<{ tab?: string }>();
 
   const [points, setPoints] = useState(0);
   const [quizHistory, setQuizHistory] = useState<QuizResult[]>([]);
   const [savedVideos, setSavedVideos] = useState<SavedVideo[]>([]);
   const [savedTours, setSavedTours] = useState<SavedTour[]>([]);
-  const [activeTab, setActiveTab] = useState<Tab>('quiz');
+  const validTabs: Tab[] = ['quiz', 'tours', 'videos', 'board'];
+  const initialTab: Tab = validTabs.includes(params.tab as Tab) ? (params.tab as Tab) : 'quiz';
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
+  const [adminEnabled, setAdminEnabled] = useState(false);
 
-  const load = useCallback(() => {
-    getPoints().then(setPoints);
-    getQuizHistory().then(setQuizHistory);
-    getSavedVideos().then(setSavedVideos);
-    getSavedTours().then(setSavedTours);
-  }, []);
+  const load = useCallback(async () => {
+    const [pts, quizzes, videos, tours] = await Promise.all([
+      getPoints(), getQuizHistory(), getSavedVideos(), getSavedTours(),
+    ]);
+    setPoints(pts);
+    setQuizHistory(quizzes);
+    setSavedVideos(videos);
+    setSavedTours(tours);
+    const adminOk = await isAdminUnlocked();
+    setAdminEnabled(adminOk);
+
+    // סנכרון נתוני המשתמש הנוכחי לרג'יסטרי
+    if (profile) {
+      await upsertUser({
+        id: profile.name.replace(/\s+/g, '_').toLowerCase() + '_local',
+        name: profile.name,
+        points: pts,
+        quizCount: quizzes.length,
+        tourCount: tours.length,
+        videoCount: videos.length,
+        joinedAt: Date.now() - 86400000,
+        lastActive: Date.now(),
+        isActive: true,
+      });
+    }
+  }, [profile]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
@@ -282,14 +307,39 @@ export default function ProfileScreen() {
         </View>
       )}
 
-      {/* Sign out */}
-      <TouchableOpacity
-        style={styles.logoutBtn}
-        onPress={() => (config.hasSupabase ? signOut() : Alert.alert('יציאה', 'אין חשבון מחובר'))}
-      >
-        <Ionicons name="log-out-outline" size={18} color={theme.colors.textMuted} />
-        <Text style={styles.logoutText}>יציאה</Text>
-      </TouchableOpacity>
+      {/* ─── Settings / more ───────────────────────────────── */}
+      <View style={styles.menuSection}>
+        <TouchableOpacity style={styles.menuRow} onPress={() => router.push('/about')} activeOpacity={0.8}>
+          <View style={[styles.menuIcon, { backgroundColor: '#e8f5ee' }]}>
+            <Ionicons name="information-circle-outline" size={20} color={theme.colors.primaryLight} />
+          </View>
+          <Text style={styles.menuLabel}>אודות שבילית</Text>
+          <Ionicons name="chevron-back" size={16} color={theme.colors.border} />
+        </TouchableOpacity>
+
+        {adminEnabled && (
+          <TouchableOpacity style={styles.menuRow} onPress={() => router.push('/admin')} activeOpacity={0.8}>
+            <View style={[styles.menuIcon, { backgroundColor: '#fef3c7' }]}>
+              <Ionicons name="shield-checkmark-outline" size={20} color="#b45309" />
+            </View>
+            <Text style={[styles.menuLabel, { color: '#b45309' }]}>פאנל ניהול</Text>
+            <View style={styles.adminPill}><Text style={styles.adminPillText}>ADMIN</Text></View>
+            <Ionicons name="chevron-back" size={16} color={theme.colors.border} />
+          </TouchableOpacity>
+        )}
+
+        <TouchableOpacity
+          style={[styles.menuRow, styles.menuRowLast]}
+          onPress={() => config.hasSupabase ? signOut() : Alert.alert('יציאה', 'אין חשבון מחובר')}
+          activeOpacity={0.8}
+        >
+          <View style={[styles.menuIcon, { backgroundColor: '#fee2e2' }]}>
+            <Ionicons name="log-out-outline" size={20} color={theme.colors.danger} />
+          </View>
+          <Text style={[styles.menuLabel, { color: theme.colors.danger }]}>יציאה</Text>
+          <Ionicons name="chevron-back" size={16} color={theme.colors.border} />
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
@@ -395,10 +445,38 @@ const styles = StyleSheet.create({
   boardPoints: { fontSize: 15, fontWeight: '700', color: theme.colors.textMuted },
   boardPointsMe: { color: theme.colors.primary, fontWeight: '900' },
 
-  // ─── Logout
-  logoutBtn: {
-    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center',
-    gap: theme.spacing(0.75), margin: theme.spacing(2), padding: theme.spacing(1.5),
+  // ─── Menu section
+  menuSection: {
+    backgroundColor: theme.colors.surface,
+    marginHorizontal: theme.spacing(2),
+    marginTop: theme.spacing(2),
+    marginBottom: theme.spacing(4),
+    borderRadius: theme.radiusXl,
+    overflow: 'hidden',
+    ...theme.shadowSoft,
   },
-  logoutText: { color: theme.colors.textMuted, fontSize: 14, fontWeight: '600' },
+  menuRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    paddingVertical: theme.spacing(1.75),
+    paddingHorizontal: theme.spacing(2),
+    gap: theme.spacing(1.5),
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  menuRowLast: { borderBottomWidth: 0 },
+  menuIcon: {
+    width: 36, height: 36, borderRadius: 10,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  menuLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: theme.colors.text, textAlign: 'right' },
+  adminPill: {
+    backgroundColor: '#fef3c7',
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderWidth: 1,
+    borderColor: '#f59e0b55',
+  },
+  adminPillText: { fontSize: 9, fontWeight: '800', color: '#b45309', letterSpacing: 0.5 },
 });
