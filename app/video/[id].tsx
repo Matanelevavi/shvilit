@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useVideoPlayer, VideoView } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
+import { VideoPlayer } from '@/ui/VideoPlayer';
 import { getCachedPoi } from '@/state/store';
 import { requestVideoTour, getVideoTour } from '@/services/video/videoTourApi';
 import { TOUR_STYLE_LABELS, type TourLengthMinutes, type TourStyle } from '@/domain/types';
@@ -21,12 +21,6 @@ const PROGRESS_MSGS = [
   'מרכיבים את הווידאו...',
 ];
 
-function Player({ uri }: { uri: string }) {
-  const player = useVideoPlayer(uri, (p) => { p.loop = false; p.play(); });
-  return (
-    <VideoView player={player} style={styles.video} nativeControls allowsFullscreen contentFit="contain" />
-  );
-}
 
 export default function VideoTourScreen() {
   const params = useLocalSearchParams<{ id: string; minutes: string; style: string; savedUrl?: string }>();
@@ -186,7 +180,7 @@ export default function VideoTourScreen() {
       <View style={styles.container}>
         <Text style={styles.title}>{poi?.title ?? 'סיור וידאו'}</Text>
         <Text style={styles.meta}>{minutes} דקות · {TOUR_STYLE_LABELS[style]}</Text>
-        <Player uri={url} />
+        <VideoPlayer uri={url} />
         <View style={styles.actionsRow}>
           <TouchableOpacity
             style={[styles.saveBtn, saved && styles.saveBtnDone]}
