@@ -1,0 +1,11 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+storage/
+
+# dev/test scripts - not for deploy
+selftest.py
+run_test.py
+test_fixes.py

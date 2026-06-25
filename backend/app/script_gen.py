@@ -1,0 +1,120 @@
+"""שלב 2: יצירת תסריט הסיור באמצעות Gemini API (עם retry ו-fallback בין מודלים)."""
+import asyncio
+
+import httpx
+
+from .config import GEMINI_API_KEY, GEMINI_MODEL, WORDS_PER_MINUTE
+
+# סדר ניסיון: המודל מה-.env, ואז מודלים פחות עמוסים כ-fallback ל-503.
+MODELS = list(
+    dict.fromkeys([
+        GEMINI_MODEL,
+        "gemini-2.5-flash-lite",
+        "gemini-2.0-flash-lite",
+        "gemini-2.0-flash",
+        "gemini-flash-latest",
+    ])
+)
+
+_BACKOFF = [2, 5, 12]  # שניות המתנה בין ניסיונות (503/429)
+
+STYLE_INSTRUCTIONS = {
+    "historical": "סגנון היסטורי-עובדתי: רצף כרונולוגי ברור, דגש על תאריכים, דמויות ואירועים מרכזיים, טון מכובד ומלמד.",
+    "mystery": "סגנון מתח ומסתורין: פתיחה מסקרנת, טון דרמטי, מתח נרטיבי וגילוי הדרגתי - אך ללא המצאת עובדות.",
+    "kids": "סגנון לילדים: שפה פשוטה, חמה ונלהבת, משפטים קצרים, דימויים מהעולם של ילדים.",
+}
+
+
+def _build_prompt(location: str, duration_minutes: int, style: str) -> str:
+    target_words = duration_minutes * WORDS_PER_MINUTE
+    style_line = STYLE_INSTRUCTIONS.get(style, STYLE_INSTRUCTIONS["historical"])
+    return "\n".join(
+        [
+            f'אתה מדריך טיולים מומחה. כתוב תסריט הקראה בעברית לסיור מודרך על "{location}".',
+            "",
+            "חוקים מחייבים:",
+            f"1. אורך: כ-{target_words} מילים (סיור של {duration_minutes} דקות בקצב {WORDS_PER_MINUTE} מילים לדקה).",
+            "2. הסתמך על ידע עובדתי אמין על המקום. אל תמציא פרטים שאינך בטוח בהם.",
+            f"3. {style_line}",
+            "4. חלק לפסקאות קצרות (2-4 משפטים) מופרדות בשורה ריקה. ללא כותרות, ללא נקודות תבליט, ללא הערות במאמר מוסגר.",
+            "5. עברית תקנית וזורמת, מתאימה להקראה קולית רציפה.",
+            "",
+            "כתוב כעת רק את תסריט הסיור עצמו:",
+        ]
+    )
+
+
+def _extract(data: dict) -> str:
+    try:
+        return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+    except (KeyError, IndexError):
+        return ""
+
+
+async def generate_script(location: str, duration_minutes: int, style: str) -> str:
+    if not GEMINI_API_KEY:
+        raise RuntimeError("GEMINI_API_KEY חסר. הוסף אותו ל-backend/.env")
+
+    prompt = _build_prompt(location, duration_minutes, style)
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"temperature": 0.85, "maxOutputTokens": 4096},
+    }
+
+    last_err = ""
+    async with httpx.AsyncClient(timeout=90) as client:
+        for model in MODELS:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+            for attempt in range(3):
+                resp = await client.post(url, params={"key": GEMINI_API_KEY}, json=payload)
+                if resp.status_code == 200:
+                    text = _extract(resp.json())
+                    if text:
+                        return text
+                    last_err = f"{model}: empty response"
+                    break  # מודל הצליח אך ריק -> ננסה מודל אחר
+                if resp.status_code in (429, 500, 503):
+                    last_err = f"מודל {model} עמוס (נסיון {attempt+1}/3)"
+                    await asyncio.sleep(_BACKOFF[attempt])
+                    continue  # עומס זמני -> retry על אותו מודל
+                if resp.status_code == 404:
+                    last_err = f"מודל {model} לא זמין"
+                    break  # מודל לא קיים -> עוברים למודל הבא
+                if resp.status_code == 400:
+                    raise RuntimeError("מפתח Gemini לא תקין. בדוק את GEMINI_API_KEY.")
+                if resp.status_code == 403:
+                    raise RuntimeError("אין הרשאה ל-Gemini API. בדוק את המפתח.")
+                last_err = f"שגיאה בלתי צפויה ממודל {model} (קוד {resp.status_code})"
+                break  # שגיאה אחרת -> ננסה מודל הבא
+            # מיצינו את הניסיונות למודל הזה -> עוברים למודל הבא.
+    raise RuntimeError(f"Gemini עמוס כרגע - כל המודלים עסוקים. נסה שוב בעוד דקה. (פרטים: {last_err})")
+
+
+async def generate_keywords(script: str) -> list[str]:
+    """מפיק 8 מילות מפתח אנגליות לחיפוש תמונות ב-Commons. כשל לא קריטי - מחזיר רשימה ריקה."""
+    if not GEMINI_API_KEY or not script:
+        return []
+    prompt = (
+        "Extract 8 specific English search terms for Wikimedia Commons image search "
+        "from this Hebrew tour script. Focus on: specific historical events, "
+        "architectural features, artifacts, periods, famous figures - NOT the place name itself.\n"
+        f"Script (first 1200 chars): {script[:1200]}\n"
+        "Return only: term1, term2, term3, term4, term5, term6, term7, term8"
+    )
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"temperature": 0.3, "maxOutputTokens": 60},
+    }
+    # קריאה מהירה - מנסה רק שני מודלים עם timeout קצר.
+    fast_models = ["gemini-2.0-flash", "gemini-flash-latest"]
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            for model in fast_models:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+                resp = await client.post(url, params={"key": GEMINI_API_KEY}, json=payload)
+                if resp.status_code == 200:
+                    text = _extract(resp.json())
+                    return [k.strip() for k in text.split(",") if k.strip()][:8]
+    except Exception:  # noqa: BLE001
+        pass
+    return []

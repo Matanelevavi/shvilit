@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Expo (web)",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["expo", "start", "--web"],
+      "port": 8081
+    },
+    {
+      "name": "FastAPI backend",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "uvicorn", "app.main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"],
+      "cwd": "backend",
+      "port": 8000
+    }
+  ]
+}

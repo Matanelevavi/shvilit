@@ -1,0 +1,9 @@
+[build]
+  command = "npx expo export --platform web --clear"
+  publish = "dist"
+
+[build.environment]
+  EXPO_PUBLIC_VIDEO_API_URL = "https://matanelevavi-shvilit-backend.hf.space"
+  EXPO_PUBLIC_LLM_PROVIDER = "auto"
+  EXPO_PUBLIC_SUPABASE_URL = "https://ieheudkkouzwyjnpvaby.supabase.co"
+  EXPO_PUBLIC_SUPABASE_ANON_KEY = "sb_publishable_xzEuVSoVTary0rPs3ZbLYw_eHBcXSTd"

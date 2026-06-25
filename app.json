@@ -1,0 +1,65 @@
+{
+  "expo": {
+    "name": "שבילית",
+    "slug": "shvilit",
+    "scheme": "shvilit",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.shvilit.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "האפליקציה משתמשת במיקומך כדי למצוא נקודות עניין סביבך וליצור סיורי הדרכה."
+      }
+    },
+    "android": {
+      "package": "com.shvilit.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0f3d2e"
+      },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "האפליקציה משתמשת במיקומך כדי למצוא נקודות עניין סביבך וליצור סיורי הדרכה."
+        }
+      ],
+      "expo-asset",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#0f3d2e"
+        }
+      ],
+      "expo-video"
+    ],
+    "web": {
+      "output": "single",
+      "favicon": "./assets/favicon.png"
+    },
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      }
+    }
+  }
+}

@@ -1,0 +1,31 @@
+plugins = []
+headers = []
+redirects = []
+
+[functions]
+
+[functions."*"]
+
+[build]
+publish = "C:\\Users\\USER\\.claude\\Claude\\Projects\\shvilit\\dist"
+publishOrigin = "config"
+commandOrigin = "config"
+command = "npx expo export --platform web --clear"
+
+[build.environment]
+EXPO_PUBLIC_VIDEO_API_URL = "https://matanelevavi-shvilit-backend.hf.space"
+EXPO_PUBLIC_LLM_PROVIDER = "auto"
+EXPO_PUBLIC_SUPABASE_URL = "https://ieheudkkouzwyjnpvaby.supabase.co"
+EXPO_PUBLIC_SUPABASE_ANON_KEY = "sb_publishable_xzEuVSoVTary0rPs3ZbLYw_eHBcXSTd"
+
+[build.processing]
+
+[build.processing.css]
+
+[build.processing.html]
+
+[build.processing.images]
+
+[build.processing.js]
+
+[build.services]
