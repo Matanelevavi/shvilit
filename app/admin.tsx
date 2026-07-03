@@ -1,6 +1,5 @@
 import { useCallback, useState } from 'react';
 import {
-  Alert,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -12,6 +11,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '@/ui/theme';
+import { showAlert, showConfirm } from '@/ui/dialogs';
 import { useAuth } from '@/auth/AuthProvider';
 import {
   getAllUsers,
@@ -118,52 +118,44 @@ export default function AdminScreen() {
   const isCloudUser = (u: UserEntry) => !!u.email;
 
   const onReset = (user: UserEntry) => {
-    Alert.alert(
+    showConfirm(
       'איפוס נקודות',
       `לאפס את הנקודות של ${user.name} ל-0?`,
-      [
-        { text: 'ביטול', style: 'cancel' },
-        {
-          text: 'אפס', style: 'destructive',
-          onPress: async () => {
-            if (isCloudUser(user)) {
-              const { error } = await resetProfilePoints(user.id);
-              if (error) {
-                Alert.alert('האיפוס נכשל', error);
-                return;
-              }
-            } else {
-              await resetUserPoints(user.id);
-            }
-            load();
-          },
-        },
-      ],
+      'אפס',
+      async () => {
+        if (isCloudUser(user)) {
+          const { error } = await resetProfilePoints(user.id);
+          if (error) {
+            showAlert('האיפוס נכשל', error);
+            return;
+          }
+        } else {
+          await resetUserPoints(user.id);
+        }
+        load();
+      },
+      { destructive: true },
     );
   };
 
   const onDelete = (user: UserEntry) => {
-    Alert.alert(
+    showConfirm(
       'מחיקת משתמש',
       `למחוק את ${user.name} לצמיתות? ${isCloudUser(user) ? 'חשבון ה-Google שלו יימחק מהמערכת.' : ''}`,
-      [
-        { text: 'ביטול', style: 'cancel' },
-        {
-          text: 'מחק', style: 'destructive',
-          onPress: async () => {
-            if (isCloudUser(user)) {
-              // מחיקה אמיתית בשרת דרך Edge Function (רץ עם service_role)
-              const { error } = await deleteCloudUser(user.id);
-              if (error) {
-                Alert.alert('המחיקה נכשלה', error);
-                return;
-              }
-            }
-            await deleteUser(user.id); // ניקוי מהרג'יסטרי המקומי בכל מקרה
-            load();
-          },
-        },
-      ],
+      'מחק',
+      async () => {
+        if (isCloudUser(user)) {
+          // מחיקה אמיתית בשרת דרך Edge Function (רץ עם service_role)
+          const { error } = await deleteCloudUser(user.id);
+          if (error) {
+            showAlert('המחיקה נכשלה', error);
+            return;
+          }
+        }
+        await deleteUser(user.id); // ניקוי מהרג'יסטרי המקומי בכל מקרה
+        load();
+      },
+      { destructive: true },
     );
   };
 

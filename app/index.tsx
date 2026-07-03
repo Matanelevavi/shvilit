@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -21,6 +20,7 @@ import { useLocalProfile } from '@/auth/LocalProfile';
 import { config } from '@/config/env';
 import type { Coordinate, Poi } from '@/domain/types';
 import { theme } from '@/ui/theme';
+import { showAlert, showConfirm } from '@/ui/dialogs';
 import { wikiImage } from '@/ui/wikiImage';
 import { getPoints, getPendingVideos, removePendingVideo } from '@/state/gameState';
 import { getVideoTour } from '@/services/video/videoTourApi';
@@ -58,13 +58,12 @@ export default function MapScreen() {
           if (s.status === 'completed' && s.video_url) {
             await removePendingVideo(p.location);
             setPoints(await getPoints()); // רענון
-            Alert.alert(
+            showConfirm(
               '✅ הסרטון מוכן!',
               `סרטון הסיור של "${p.location}" מוכן לצפייה.`,
-              [
-                { text: 'לצפייה', onPress: () => router.push(`/video/${encodeURIComponent(p.location)}?savedUrl=${encodeURIComponent(s.video_url!)}&minutes=${p.minutes}&style=${p.style}`) },
-                { text: 'אחר כך', style: 'cancel' },
-              ],
+              'לצפייה',
+              () => router.push(`/video/${encodeURIComponent(p.location)}?savedUrl=${encodeURIComponent(s.video_url!)}&minutes=${p.minutes}&style=${p.style}`),
+              { cancelText: 'אחר כך' },
             );
           } else if (s.status === 'failed') {
             await removePendingVideo(p.location);
@@ -88,10 +87,10 @@ export default function MapScreen() {
         mapRef.current?.animateToRegion(next, 800);
       }
       if (results.length === 0) {
-        Alert.alert('לא נמצאו תוצאות', 'נסה שם מקום אחר.');
+        showAlert('לא נמצאו תוצאות', 'נסה שם מקום אחר.');
       }
     } catch (err) {
-      Alert.alert('שגיאה בחיפוש', err instanceof Error ? err.message : 'שגיאה');
+      showAlert('שגיאה בחיפוש', err instanceof Error ? err.message : 'שגיאה');
     } finally {
       setLoading(false);
     }
@@ -131,10 +130,10 @@ export default function MapScreen() {
       cachePois(results);
       setPois(results);
       if (results.length === 0) {
-        Alert.alert('לא נמצאו נקודות עניין', 'נסה אזור אחר או הגדל את טווח החיפוש.');
+        showAlert('לא נמצאו נקודות עניין', 'נסה אזור אחר או הגדל את טווח החיפוש.');
       }
     } catch (err) {
-      Alert.alert('שגיאה בטעינת נקודות', err instanceof Error ? err.message : 'שגיאה');
+      showAlert('שגיאה בטעינת נקודות', err instanceof Error ? err.message : 'שגיאה');
     } finally {
       setLoading(false);
     }

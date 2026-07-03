@@ -33,7 +33,9 @@ def _build_prompt(location: str, duration_minutes: int, style: str) -> str:
             f'אתה מדריך טיולים מומחה. כתוב תסריט הקראה בעברית לסיור מודרך על "{location}".',
             "",
             "חוקים מחייבים:",
-            f"1. אורך: כ-{target_words} מילים (סיור של {duration_minutes} דקות בקצב {WORDS_PER_MINUTE} מילים לדקה).",
+            f"1. אורך: לפחות {target_words} מילים - זהו סיור של {duration_minutes} דקות",
+            f"   בקצב {WORDS_PER_MINUTE} מילים לדקה. אל תקצר! תסריט קצר מדי פוסל את התוצאה.",
+            "   העמק בהיסטוריה, בסיפורים, בפרטים אדריכליים ובאנקדוטות כדי להגיע לאורך המלא.",
             "2. הסתמך על ידע עובדתי אמין על המקום. אל תמציא פרטים שאינך בטוח בהם.",
             f"3. {style_line}",
             "4. חלק לפסקאות קצרות (2-4 משפטים) מופרדות בשורה ריקה. ללא כותרות, ללא נקודות תבליט, ללא הערות במאמר מוסגר.",
@@ -42,6 +44,16 @@ def _build_prompt(location: str, duration_minutes: int, style: str) -> str:
             "כתוב כעת רק את תסריט הסיור עצמו:",
         ]
     )
+
+
+def _generation_config(model: str) -> dict:
+    # תקרת טוקנים גבוהה: 1,500 מילים בעברית = ~5,000 טוקנים, ובמודלי 2.5
+    # גם ה"חשיבה" נספרת בתקרה. 4096 הישן חתך תסריטים ארוכים באמצע.
+    cfg: dict = {"temperature": 0.85, "maxOutputTokens": 16384}
+    if model.startswith("gemini-2.5"):
+        # מכבים את מצב החשיבה - חוסך טוקנים וזמן, לא נחוץ לכתיבת תסריט.
+        cfg["thinkingConfig"] = {"thinkingBudget": 0}
+    return cfg
 
 
 def _extract(data: dict) -> str:
@@ -56,15 +68,15 @@ async def generate_script(location: str, duration_minutes: int, style: str) -> s
         raise RuntimeError("GEMINI_API_KEY חסר. הוסף אותו ל-backend/.env")
 
     prompt = _build_prompt(location, duration_minutes, style)
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": 0.85, "maxOutputTokens": 4096},
-    }
 
     last_err = ""
-    async with httpx.AsyncClient(timeout=90) as client:
+    async with httpx.AsyncClient(timeout=120) as client:
         for model in MODELS:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+            payload = {
+                "contents": [{"parts": [{"text": prompt}]}],
+                "generationConfig": _generation_config(model),
+            }
             for attempt in range(3):
                 resp = await client.post(url, params={"key": GEMINI_API_KEY}, json=payload)
                 if resp.status_code == 200:

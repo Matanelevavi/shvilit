@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -23,6 +22,7 @@ import {
   type TourStyle,
 } from '@/domain/types';
 import { theme } from '@/ui/theme';
+import { showAlert } from '@/ui/dialogs';
 import { wikiImage } from '@/ui/wikiImage';
 
 const STYLE_META: Record<TourStyle, { emoji: string; desc: string; color: string }> = {
@@ -70,7 +70,7 @@ export default function PoiScreen() {
       cacheTour(tour);
       router.push(`/tour/${poi.id}`);
     } catch (err) {
-      Alert.alert('יצירת הסיור נכשלה', err instanceof Error ? err.message : 'שגיאה');
+      showAlert('יצירת הסיור נכשלה', err instanceof Error ? err.message : 'שגיאה');
     } finally {
       setBusy(false);
     }

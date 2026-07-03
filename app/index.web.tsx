@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -22,6 +21,7 @@ import { useLocalProfile } from '@/auth/LocalProfile';
 import { config } from '@/config/env';
 import type { Coordinate, Poi } from '@/domain/types';
 import { theme } from '@/ui/theme';
+import { showConfirm } from '@/ui/dialogs';
 import { wikiImage } from '@/ui/wikiImage';
 
 const DEFAULT_CENTER: Coordinate = { latitude: 31.7767, longitude: 35.2345 };
@@ -59,13 +59,12 @@ export default function MapScreenWeb() {
           if (s.status === 'completed' && s.video_url) {
             await removePendingVideo(p.location);
             setPoints(await getPoints());
-            Alert.alert(
+            showConfirm(
               '✅ הסרטון מוכן!',
               `סרטון הסיור של "${p.location}" מוכן לצפייה.`,
-              [
-                { text: 'לצפייה', onPress: () => router.push(`/video/${encodeURIComponent(p.location)}?savedUrl=${encodeURIComponent(s.video_url!)}&minutes=${p.minutes}&style=${p.style}`) },
-                { text: 'אחר כך', style: 'cancel' },
-              ],
+              'לצפייה',
+              () => router.push(`/video/${encodeURIComponent(p.location)}?savedUrl=${encodeURIComponent(s.video_url!)}&minutes=${p.minutes}&style=${p.style}`),
+              { cancelText: 'אחר כך' },
             );
           } else if (s.status === 'failed') {
             await removePendingVideo(p.location);

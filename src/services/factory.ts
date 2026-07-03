@@ -3,19 +3,16 @@
  * זו הנקודה היחידה שבה מחליטים mock מול אמיתי - שאר הקוד לא יודע ולא אכפת לו.
  */
 import { Platform } from 'react-native';
-import { resolveLlmProvider } from '@/config/env';
 import type { PoiProvider } from './poi/PoiProvider';
 import { WikipediaPoiProvider } from './poi/WikipediaPoiProvider';
 import type { LLMProvider } from './llm/LLMProvider';
-import { MockLLMProvider } from './llm/MockLLMProvider';
-import { EdgeFunctionLLMProvider } from './llm/EdgeFunctionLLMProvider';
+import { BackendLLMProvider } from './llm/BackendLLMProvider';
 import type { TTSProvider } from './tts/TTSProvider';
 import { ExpoSpeechTTS } from './tts/ExpoSpeechTTS';
 import { BackendAudioTTS } from './tts/BackendAudioTTS';
 
 let poiProvider: PoiProvider | null = null;
-let mockLlmProvider: LLMProvider | null = null;
-let edgeLlmProvider: LLMProvider | null = null;
+let llmProvider: LLMProvider | null = null;
 let ttsProvider: TTSProvider | null = null;
 
 export function getPoiProvider(): PoiProvider {
@@ -24,16 +21,12 @@ export function getPoiProvider(): PoiProvider {
 }
 
 /**
- * בוחר ספק LLM: Gemini (Edge Function) רק כשיש התחברות אמיתית (accessToken);
- * אחרת תמיד Mock מקומי - כך שאורח יכול ליצור סיור בלי התחברות.
+ * ספק תסריטים: Gemini דרך ה-backend (עובד גם לאורחים - המפתח בשרת),
+ * עם נפילה אוטומטית ל-Mock מקומי אם השרת לא זמין.
  */
-export function getLlmProvider(hasAuthToken = false): LLMProvider {
-  if (resolveLlmProvider() === 'edge' && hasAuthToken) {
-    if (!edgeLlmProvider) edgeLlmProvider = new EdgeFunctionLLMProvider();
-    return edgeLlmProvider;
-  }
-  if (!mockLlmProvider) mockLlmProvider = new MockLLMProvider();
-  return mockLlmProvider;
+export function getLlmProvider(_hasAuthToken = false): LLMProvider {
+  if (!llmProvider) llmProvider = new BackendLLMProvider();
+  return llmProvider;
 }
 
 export function getTtsProvider(): TTSProvider {

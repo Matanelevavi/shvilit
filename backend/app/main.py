@@ -14,6 +14,7 @@ from .config import AUDIO_DIR, GEMINI_API_KEY, PUBLIC_BASE_URL, STORAGE_DIR
 from .models import GenerateTourRequest, TourStatus
 from .pipeline import run_pipeline
 from .quiz_gen import generate_quiz
+from .script_gen import generate_script
 from .tts import synthesize
 
 app = FastAPI(title="Shvilit Video Tour API", version="1.0.0")
@@ -129,6 +130,21 @@ async def generate_audio_endpoint(payload: dict):
         except Exception as exc:  # noqa: BLE001
             raise HTTPException(status_code=502, detail=str(exc))
     return {"audio_url": url}
+
+
+@app.post("/generate-script")
+async def generate_script_endpoint(payload: dict):
+    """תסריט סיור שמע בעברית (Gemini). משמש את מסך סיור השמע באפליקציה."""
+    location = (payload or {}).get("location", "").strip()
+    minutes = int((payload or {}).get("minutes", 5))
+    style = (payload or {}).get("style", "historical")
+    if not location:
+        raise HTTPException(status_code=400, detail="missing location")
+    try:
+        script = await generate_script(location, minutes, style)
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=str(exc))
+    return {"script": script}
 
 
 @app.post("/generate-quiz")

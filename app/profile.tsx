@@ -1,6 +1,5 @@
 import { useCallback, useState } from 'react';
 import {
-  Alert,
   Image,
   ScrollView,
   StyleSheet,
@@ -24,6 +23,7 @@ import { countWords } from '@/domain/tourLength';
 import { TOUR_STYLE_LABELS } from '@/domain/types';
 import { wikiImage } from '@/ui/wikiImage';
 import { theme } from '@/ui/theme';
+import { showConfirm } from '@/ui/dialogs';
 import { upsertUser, deleteUser, isAdminUnlocked } from '@/state/userRegistry';
 import {
   syncProfileToSupabase, getCloudLeaderboard, ADMIN_EMAIL,
@@ -178,17 +178,13 @@ export default function ProfileScreen() {
   };
 
   const deleteTour = (poiId: string, title: string) => {
-    Alert.alert('מחיקת סיור', `למחוק את הסיור של "${title}"?`, [
-      { text: 'ביטול', style: 'cancel' },
-      { text: 'מחק', style: 'destructive', onPress: async () => { await removeSavedTour(poiId); load(); } },
-    ]);
+    showConfirm('מחיקת סיור', `למחוק את הסיור של "${title}"?`, 'מחק',
+      async () => { await removeSavedTour(poiId); load(); }, { destructive: true });
   };
 
   const deleteVideo = (location: string) => {
-    Alert.alert('מחיקת סרטון', `למחוק את הסרטון של "${location}"?`, [
-      { text: 'ביטול', style: 'cancel' },
-      { text: 'מחק', style: 'destructive', onPress: async () => { await removeSavedVideo(location); load(); } },
-    ]);
+    showConfirm('מחיקת סרטון', `למחוק את הסרטון של "${location}"?`, 'מחק',
+      async () => { await removeSavedVideo(location); load(); }, { destructive: true });
   };
 
   return (

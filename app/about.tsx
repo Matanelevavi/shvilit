@@ -1,6 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
 import {
-  Alert,
   Image,
   Linking,
   ScrollView,
@@ -13,6 +12,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '@/ui/theme';
+import { showAlert } from '@/ui/dialogs';
 import { unlockAdmin, isAdminUnlocked } from '@/state/userRegistry';
 
 const VERSION = '1.0.0';
@@ -45,7 +45,7 @@ export default function AboutScreen() {
       tapCount.current = 0;
       await unlockAdmin();
       setAdminVisible(true);
-      Alert.alert('מצב מפתח הופעל', 'גישת מנהל מערכת זמינה עכשיו.');
+      showAlert('מצב מפתח הופעל', 'גישת מנהל מערכת זמינה עכשיו.');
     }
   }, []);
 

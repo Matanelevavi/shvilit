@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Animated,
   Easing,
   Image,
@@ -18,6 +17,7 @@ import { useAuth } from '@/auth/AuthProvider';
 import { useLocalProfile } from '@/auth/LocalProfile';
 import { config } from '@/config/env';
 import { theme } from '@/ui/theme';
+import { showAlert } from '@/ui/dialogs';
 
 function AnimatedLogo() {
   const scale = useRef(new Animated.Value(0)).current;
@@ -74,7 +74,7 @@ export default function LoginScreen() {
       setBusy(true);
       await signInWithGoogle();
     } catch (err) {
-      Alert.alert('ההתחברות נכשלה', err instanceof Error ? err.message : 'שגיאה לא ידועה');
+      showAlert('ההתחברות נכשלה', err instanceof Error ? err.message : 'שגיאה לא ידועה');
     } finally {
       setBusy(false);
     }

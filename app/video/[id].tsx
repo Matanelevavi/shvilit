@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { VideoPlayer } from '@/ui/VideoPlayer';
@@ -11,6 +11,7 @@ import {
   saveVideo, isVideoSaved,
 } from '@/state/gameState';
 import { theme } from '@/ui/theme';
+import { showAlert } from '@/ui/dialogs';
 
 const MAX_POLL_MS = 12 * 60 * 1000;
 
@@ -150,7 +151,7 @@ export default function VideoTourScreen() {
     if (!url || !poi) return;
     await saveVideo({ location: poi.title, videoUrl: url, style, minutes, savedAt: Date.now() });
     setSaved(true);
-    Alert.alert('✅ נשמר!', `הסרטון של "${poi.title}" נשמר לאזור האישי שלך.`);
+    showAlert('✅ נשמר!', `הסרטון של "${poi.title}" נשמר לאזור האישי שלך.`);
   };
 
   // ─── Error ────────────────────────────────────────────────────────────────
