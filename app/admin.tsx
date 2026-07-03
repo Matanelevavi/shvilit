@@ -24,6 +24,7 @@ import {
 import {
   getAllProfiles,
   resetProfilePoints,
+  deleteCloudUser,
   ADMIN_EMAIL,
   type SupabaseProfile,
 } from '@/state/supabaseProfile';
@@ -117,10 +118,6 @@ export default function AdminScreen() {
   const isCloudUser = (u: UserEntry) => !!u.email;
 
   const onReset = (user: UserEntry) => {
-    if (user.id.startsWith('npc_')) {
-      Alert.alert('לא ניתן', 'שחקני AI אינם ניתנים לעריכה.');
-      return;
-    }
     Alert.alert(
       'איפוס נקודות',
       `לאפס את הנקודות של ${user.name} ל-0?`,
@@ -146,27 +143,25 @@ export default function AdminScreen() {
   };
 
   const onDelete = (user: UserEntry) => {
-    if (user.id.startsWith('npc_')) {
-      Alert.alert('לא ניתן', 'שחקני AI אינם ניתנים למחיקה.');
-      return;
-    }
-    // מחיקת חשבון Google דורשת service_role key שאסור לחשוף באפליקציה -
-    // אפשרית רק מלוח הבקרה של Supabase. לא מציגים כפתור שמשקר.
-    if (isCloudUser(user)) {
-      Alert.alert(
-        'מחיקה דרך Supabase',
-        'משתמש שנרשם עם Google נמחק רק מלוח הבקרה של Supabase (Authentication → Users). מחיקה מכאן תדרוש חשיפת מפתח סודי באפליקציה.',
-      );
-      return;
-    }
     Alert.alert(
       'מחיקת משתמש',
-      `למחוק את ${user.name} לצמיתות?`,
+      `למחוק את ${user.name} לצמיתות? ${isCloudUser(user) ? 'חשבון ה-Google שלו יימחק מהמערכת.' : ''}`,
       [
         { text: 'ביטול', style: 'cancel' },
         {
           text: 'מחק', style: 'destructive',
-          onPress: async () => { await deleteUser(user.id); load(); },
+          onPress: async () => {
+            if (isCloudUser(user)) {
+              // מחיקה אמיתית בשרת דרך Edge Function (רץ עם service_role)
+              const { error } = await deleteCloudUser(user.id);
+              if (error) {
+                Alert.alert('המחיקה נכשלה', error);
+                return;
+              }
+            }
+            await deleteUser(user.id); // ניקוי מהרג'יסטרי המקומי בכל מקרה
+            load();
+          },
         },
       ],
     );
@@ -176,7 +171,6 @@ export default function AdminScreen() {
   const totalQuizzes  = users.reduce((s, u) => s + u.quizCount, 0);
   const totalTours    = users.reduce((s, u) => s + u.tourCount,  0);
   const activeNow     = users.filter((u) => u.isActive).length;
-  const realUsers     = users.filter((u) => !u.id.startsWith('npc_'));
 
   // עד שבדיקת ההרשאה מסתיימת (או כשנכשלה וההפניה בדרך) - לא מציגים כלום
   if (allowed !== true) {
@@ -199,7 +193,7 @@ export default function AdminScreen() {
           <Text style={styles.headerTitle}>פאנל ניהול</Text>
         </View>
         <Text style={styles.headerSub}>
-          {realUsers.length} משתמשים אמיתיים · {users.length} סה"כ
+          {users.length} משתמשים רשומים
         </Text>
         <View style={[styles.modeBadge, supabaseMode ? styles.modeBadgeLive : styles.modeBadgeLocal]}>
           <Ionicons name={supabaseMode ? 'cloud-done-outline' : 'phone-portrait-outline'} size={12} color={supabaseMode ? '#6ee7b7' : '#9bb3a6'} />
@@ -246,10 +240,13 @@ export default function AdminScreen() {
         </TouchableOpacity>
       </View>
 
+      {users.length === 0 && (
+        <Text style={styles.emptyList}>עדיין אין משתמשים רשומים</Text>
+      )}
+
       {users.map((user, idx) => {
         const tier = getRank(user.points);
         const isExpanded = expandedId === user.id;
-        const isNpc = user.id.startsWith('npc_');
         return (
           <TouchableOpacity
             key={user.id}
@@ -261,7 +258,7 @@ export default function AdminScreen() {
             <Text style={styles.rankNum}>#{idx + 1}</Text>
 
             {/* Avatar */}
-            <View style={[styles.avatar, isNpc && styles.avatarNpc]}>
+            <View style={styles.avatar}>
               <Text style={styles.avatarText}>{user.name.charAt(0)}</Text>
             </View>
 
@@ -269,11 +266,10 @@ export default function AdminScreen() {
             <View style={styles.userInfo}>
               <View style={styles.userNameRow}>
                 <Text style={styles.userName}>{user.name}</Text>
-                {isNpc && <View style={styles.npcBadge}><Text style={styles.npcBadgeText}>AI</Text></View>}
                 {user.isAdmin && <View style={styles.adminUserBadge}><Text style={styles.adminUserBadgeText}>ADMIN</Text></View>}
                 {user.isActive && <View style={styles.onlineDot} />}
               </View>
-              {user.email && !isNpc && (
+              {user.email && (
                 <Text style={styles.userEmail} numberOfLines={1}>{user.email}</Text>
               )}
               <Text style={styles.userTier}>{tier.emoji} {tier.name}</Text>
@@ -313,30 +309,24 @@ export default function AdminScreen() {
                   </View>
                 </View>
 
-                {!isNpc && (
-                  <View style={styles.expandedActions}>
-                    <TouchableOpacity
-                      style={styles.actionBtnWarn}
-                      onPress={() => onReset(user)}
-                      activeOpacity={0.85}
-                    >
-                      <Ionicons name="refresh-circle-outline" size={16} color="#b45309" />
-                      <Text style={styles.actionBtnWarnText}>איפוס נקודות</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.actionBtnDanger}
-                      onPress={() => onDelete(user)}
-                      activeOpacity={0.85}
-                    >
-                      <Ionicons name="trash-outline" size={16} color="#fff" />
-                      <Text style={styles.actionBtnDangerText}>הסרת משתמש</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-
-                {isNpc && (
-                  <Text style={styles.npcNote}>שחקן AI - לא ניתן לעריכה</Text>
-                )}
+                <View style={styles.expandedActions}>
+                  <TouchableOpacity
+                    style={styles.actionBtnWarn}
+                    onPress={() => onReset(user)}
+                    activeOpacity={0.85}
+                  >
+                    <Ionicons name="refresh-circle-outline" size={16} color="#b45309" />
+                    <Text style={styles.actionBtnWarnText}>איפוס נקודות</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.actionBtnDanger}
+                    onPress={() => onDelete(user)}
+                    activeOpacity={0.85}
+                  >
+                    <Ionicons name="trash-outline" size={16} color="#fff" />
+                    <Text style={styles.actionBtnDangerText}>הסרת משתמש</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             )}
           </TouchableOpacity>
@@ -344,8 +334,7 @@ export default function AdminScreen() {
       })}
 
       <Text style={styles.footer}>
-        * שחקני AI משמשים להשלמת לוח התוצאות{'\n'}
-        {supabaseMode ? 'נתונים חיים מ-Supabase · עודכן כרגע' : 'נתונים מאוחסנים מקומית במכשיר'}
+        {supabaseMode ? 'נתונים חיים מ-Supabase' : 'נתונים מאוחסנים מקומית במכשיר'}
       </Text>
     </ScrollView>
   );
@@ -450,18 +439,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarNpc: { backgroundColor: theme.colors.surfaceAlt },
   avatarText: { fontSize: 16, fontWeight: '800', color: '#fff' },
+  emptyList: {
+    textAlign: 'center',
+    color: theme.colors.textMuted,
+    fontSize: 14,
+    paddingVertical: theme.spacing(4),
+  },
   userInfo: { flex: 1 },
   userNameRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: theme.spacing(0.75) },
   userName: { fontSize: 15, fontWeight: '700', color: theme.colors.text },
-  npcBadge: {
-    backgroundColor: theme.colors.surfaceAlt,
-    borderRadius: 999,
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-  },
-  npcBadgeText: { fontSize: 9, fontWeight: '800', color: theme.colors.textMuted, letterSpacing: 0.5 },
   onlineDot: {
     width: 8,
     height: 8,
@@ -526,7 +513,6 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius,
   },
   actionBtnDangerText: { fontSize: 13, fontWeight: '700', color: '#fff' },
-  npcNote: { fontSize: 12, color: theme.colors.textMuted, textAlign: 'center', fontStyle: 'italic' },
 
   footer: {
     marginTop: theme.spacing(3),

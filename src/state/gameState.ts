@@ -87,6 +87,11 @@ export async function addPoints(amount: number): Promise<number> {
   return total;
 }
 
+/** קובע ערך נקודות מוחלט - לאימוץ ערך הענן אחרי סנכרון. */
+export async function setPoints(value: number): Promise<void> {
+  await AsyncStorage.setItem(K_POINTS, String(Math.max(0, value)));
+}
+
 // ─── Quiz history ─────────────────────────────────────────────────────────────
 export async function getQuizHistory(): Promise<QuizResult[]> {
   try {

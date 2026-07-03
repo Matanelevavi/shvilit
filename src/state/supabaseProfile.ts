@@ -1,6 +1,10 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/auth/supabaseClient';
 
 export const ADMIN_EMAIL = 'matanelevavi@gmail.com';
+
+// כמה נקודות כבר סונכרנו לענן - הבסיס לחישוב הדלתא בסנכרון הבא.
+const SYNCED_POINTS_KEY = 'shvilit_synced_points_v1';
 
 export interface SupabaseProfile {
   id: string;
@@ -15,11 +19,22 @@ export interface SupabaseProfile {
   last_active: string;
 }
 
+export interface LeaderboardRow {
+  id: string;
+  name: string | null;
+  points: number;
+}
+
 /**
- * מסנכרן את נתוני הפעילות של המשתמש הנוכחי לטבלת profiles.
- * מיזוג "כלפי מעלה" בלבד: לוקח את המקסימום בין הערך המקומי לערך בענן,
- * כדי שמכשיר חדש (נתונים מקומיים 0) לא ידרוס את הנקודות שנצברו בענן.
- * העמודות email/is_admin נכפות בצד השרת (trigger) ולכן לא נשלחות.
+ * מסנכרן את נתוני המשתמש הנוכחי לטבלת profiles.
+ *
+ * הנקודות מסונכרנות בשיטת דלתא והענן הוא מקור האמת:
+ *   newCloud = cloudPoints + (localPoints - lastSyncedPoints)
+ * כך גם מכשיר חדש לא דורס את הענן (דלתא 0 - הוא מאמץ את ערך הענן),
+ * וגם איפוס נקודות של אדמין מחזיק - המכשיר של המשתמש מאמץ את ה-0
+ * במקום להעלות חזרה את הערך הישן.
+ *
+ * מחזיר את ערך הנקודות העדכני מהענן (אם שונה מהמקומי - על הקורא לאמץ אותו).
  */
 export async function syncProfileToSupabase(data: {
   name?: string;
@@ -27,26 +42,33 @@ export async function syncProfileToSupabase(data: {
   quizCount: number;
   tourCount: number;
   videoCount: number;
-}): Promise<void> {
-  if (!supabase) return;
+}): Promise<{ points: number } | null> {
+  if (!supabase) return null;
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) return null;
 
-    const { data: existing } = await supabase
-      .from('profiles')
-      .select('points, quiz_count, tour_count, video_count')
-      .eq('id', user.id)
-      .maybeSingle();
+    const [{ data: existing }, lastSyncedRaw] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('points, quiz_count, tour_count, video_count')
+        .eq('id', user.id)
+        .maybeSingle(),
+      AsyncStorage.getItem(SYNCED_POINTS_KEY),
+    ]);
 
-    await supabase.from('profiles').upsert(
+    const lastSynced = Number(lastSyncedRaw) || 0;
+    const delta = Math.max(0, data.points - lastSynced);
+    const newPoints = (existing?.points ?? 0) + delta;
+
+    const { error } = await supabase.from('profiles').upsert(
       {
         id:          user.id,
         name:        data.name
                      || user.user_metadata?.full_name
                      || user.email?.split('@')[0]
                      || null,
-        points:      Math.max(data.points,     existing?.points      ?? 0),
+        points:      newPoints,
         quiz_count:  Math.max(data.quizCount,  existing?.quiz_count  ?? 0),
         tour_count:  Math.max(data.tourCount,  existing?.tour_count  ?? 0),
         video_count: Math.max(data.videoCount, existing?.video_count ?? 0),
@@ -54,12 +76,17 @@ export async function syncProfileToSupabase(data: {
       },
       { onConflict: 'id' },
     );
+    if (error) return null;
+
+    await AsyncStorage.setItem(SYNCED_POINTS_KEY, String(newPoints));
+    return { points: newPoints };
   } catch {
     // שגיאת רשת - לא קריטי, יסונכרן בפוקוס הבא
+    return null;
   }
 }
 
-/** מחזיר את כל הפרופילים (נגיש רק לאדמין לפי RLS; לאחרים יוחזרו רק הם עצמם). */
+/** מחזיר את כל הפרופילים (נגיש רק לאדמין לפי RLS; לאחרים תוחזר רק השורה שלהם). */
 export async function getAllProfiles(): Promise<SupabaseProfile[]> {
   if (!supabase) return [];
   try {
@@ -74,15 +101,49 @@ export async function getAllProfiles(): Promise<SupabaseProfile[]> {
   }
 }
 
+/** לוח תוצאות ציבורי (view ללא מיילים) - נגיש לכל המשתמשים כולל אורחים. */
+export async function getCloudLeaderboard(): Promise<LeaderboardRow[]> {
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase
+      .from('leaderboard')
+      .select('*')
+      .order('points', { ascending: false })
+      .limit(50);
+    if (error || !data) return [];
+    return data as LeaderboardRow[];
+  } catch {
+    return [];
+  }
+}
+
 /** מאפס נקודות של משתמש. מחזיר שגיאה אם RLS חסם או שהעדכון לא תפס שורה. */
 export async function resetProfilePoints(userId: string): Promise<{ error: string | null }> {
   if (!supabase) return { error: 'Supabase לא מחובר' };
   const { data, error } = await supabase
     .from('profiles')
-    .update({ points: 0, quiz_count: 0 })
+    .update({ points: 0 })
     .eq('id', userId)
     .select('id');
   if (error) return { error: error.message };
   if (!data || data.length === 0) return { error: 'אין הרשאה לעדכן משתמש זה' };
   return { error: null };
+}
+
+/**
+ * מוחק משתמש ענן לצמיתות דרך Edge Function (admin-delete-user).
+ * המחיקה רצה בשרת עם service_role - הפונקציה מאמתת שהקורא הוא האדמין.
+ */
+export async function deleteCloudUser(userId: string): Promise<{ error: string | null }> {
+  if (!supabase) return { error: 'Supabase לא מחובר' };
+  try {
+    const { data, error } = await supabase.functions.invoke('admin-delete-user', {
+      body: { userId },
+    });
+    if (error) return { error: error.message };
+    if (data?.error) return { error: String(data.error) };
+    return { error: null };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : 'שגיאת רשת' };
+  }
 }

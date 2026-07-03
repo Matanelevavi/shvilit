@@ -14,7 +14,7 @@ import { useLocalProfile } from '@/auth/LocalProfile';
 import { useAuth } from '@/auth/AuthProvider';
 import { config } from '@/config/env';
 import {
-  getPoints, getRank, getQuizHistory, getSavedVideos,
+  getPoints, setPoints as persistPoints, getRank, getQuizHistory, getSavedVideos,
   removeSavedVideo, POINTS_PER_CORRECT, TIERS,
   type QuizResult, type SavedVideo,
 } from '@/state/gameState';
@@ -24,15 +24,33 @@ import { countWords } from '@/domain/tourLength';
 import { TOUR_STYLE_LABELS } from '@/domain/types';
 import { wikiImage } from '@/ui/wikiImage';
 import { theme } from '@/ui/theme';
-import { upsertUser, deleteUser, isAdminUnlocked, DEMO_USERS } from '@/state/userRegistry';
-import { syncProfileToSupabase, ADMIN_EMAIL } from '@/state/supabaseProfile';
+import { upsertUser, deleteUser, isAdminUnlocked } from '@/state/userRegistry';
+import {
+  syncProfileToSupabase, getCloudLeaderboard, ADMIN_EMAIL,
+  type LeaderboardRow,
+} from '@/state/supabaseProfile';
 
-function buildLeaderboard(myName: string, myPoints: number) {
-  const all = [
-    { name: myName, points: myPoints, isMe: true },
-    ...DEMO_USERS.map((p) => ({ name: p.name, points: p.points, isMe: false })),
-  ];
-  return all.sort((a, b) => b.points - a.points);
+interface BoardEntry { name: string; points: number; isMe: boolean }
+
+/**
+ * לוח תוצאות: משתמשים אמיתיים מהענן (view ציבורי בלי מיילים).
+ * אם המשתמש הנוכחי לא מופיע שם (אורח מקומי) - מוסיפים אותו מקומית.
+ */
+function buildLeaderboard(
+  cloud: LeaderboardRow[],
+  myId: string | null,
+  myName: string,
+  myPoints: number,
+): BoardEntry[] {
+  const rows: BoardEntry[] = cloud.map((r) => ({
+    name: r.name ?? 'מטייל',
+    points: r.points,
+    isMe: myId !== null && r.id === myId,
+  }));
+  if (!rows.some((r) => r.isMe)) {
+    rows.push({ name: myName, points: myPoints, isMe: true });
+  }
+  return rows.sort((a, b) => b.points - a.points);
 }
 
 function formatDate(ts: number) {
@@ -70,6 +88,7 @@ export default function ProfileScreen() {
   const params = useLocalSearchParams<{ tab?: string }>();
 
   const [points, setPoints] = useState(0);
+  const [cloudBoard, setCloudBoard] = useState<LeaderboardRow[]>([]);
   const [quizHistory, setQuizHistory] = useState<QuizResult[]>([]);
   const [savedVideos, setSavedVideos] = useState<SavedVideo[]>([]);
   const [savedTours, setSavedTours] = useState<SavedTour[]>([]);
@@ -119,22 +138,32 @@ export default function ProfileScreen() {
       }
     }
 
-    // סנכרון לסופאבייס (אם המשתמש מחובר עם Google)
+    // סנכרון לסופאבייס (אם המשתמש מחובר עם Google).
+    // הענן הוא מקור האמת לנקודות - אם הערך שחזר שונה (למשל אחרי
+    // איפוס אדמין או כניסה ממכשיר חדש), מאמצים אותו מקומית.
     if (user) {
-      await syncProfileToSupabase({
+      const synced = await syncProfileToSupabase({
         name: displayName,
         points: pts,
         quizCount: quizzes.length,
         tourCount: tours.length,
         videoCount: videos.length,
       });
+      if (synced && synced.points !== pts) {
+        await persistPoints(synced.points);
+        setPoints(synced.points);
+      }
     }
+
+    // לוח תוצאות: משתמשים אמיתיים מהענן (נטען אחרי הסנכרון כדי שנופיע בו)
+    setCloudBoard(await getCloudLeaderboard());
   }, [profile, user]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   const rank = getRank(points);
-  const leaderboard = buildLeaderboard(profile?.name ?? 'אני', points);
+  const myName = user?.user_metadata?.full_name || profile?.name || 'אני';
+  const leaderboard = buildLeaderboard(cloudBoard, user?.id ?? null, myName, points);
 
   const openTour = (t: SavedTour) => {
     cachePois([{
@@ -313,7 +342,11 @@ export default function ProfileScreen() {
       {/* ─── Leaderboard ───────────────────────────────────── */}
       {activeTab === 'board' && (
         <View style={styles.section}>
-          <Text style={styles.boardNote}>* שחקנים אחרים הם שחקני AI לחוויית משחק מלאה</Text>
+          <Text style={styles.boardNote}>
+            {cloudBoard.length > 0
+              ? 'לוח התוצאות של כל המטיילים בשבילית'
+              : 'התחבר עם Google כדי להתחרות מול מטיילים אחרים'}
+          </Text>
           {leaderboard.map((player, i) => (
             <View key={i} style={[styles.boardRow, player.isMe && styles.boardRowMe]}>
               <Text style={[styles.boardRank, i < 3 && styles.boardRankTop]}>

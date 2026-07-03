@@ -17,22 +17,12 @@ export interface UserEntry {
   isActive: boolean;
 }
 
-export const DEMO_USERS: UserEntry[] = [
-  { id: 'npc_ronit',  name: 'רונית כ.',  points: 920, quizCount: 18, tourCount: 12, videoCount: 3,  joinedAt: Date.now() - 86400000 * 30, lastActive: Date.now() - 3600000,      isActive: true  },
-  { id: 'npc_amir',   name: 'אמיר ג.',   points: 750, quizCount: 14, tourCount: 9,  videoCount: 2,  joinedAt: Date.now() - 86400000 * 25, lastActive: Date.now() - 7200000,      isActive: true  },
-  { id: 'npc_yael',   name: 'יעל ש.',    points: 640, quizCount: 11, tourCount: 7,  videoCount: 5,  joinedAt: Date.now() - 86400000 * 20, lastActive: Date.now() - 86400000,     isActive: false },
-  { id: 'npc_david',  name: 'דוד מ.',    points: 430, quizCount: 8,  tourCount: 5,  videoCount: 1,  joinedAt: Date.now() - 86400000 * 14, lastActive: Date.now() - 86400000 * 2, isActive: false },
-  { id: 'npc_michal', name: 'מיכל א.',   points: 280, quizCount: 5,  tourCount: 4,  videoCount: 0,  joinedAt: Date.now() - 86400000 * 10, lastActive: Date.now() - 86400000 * 3, isActive: false },
-  { id: 'npc_shai',   name: 'שי פ.',     points: 150, quizCount: 3,  tourCount: 2,  videoCount: 0,  joinedAt: Date.now() - 86400000 * 7,  lastActive: Date.now() - 86400000 * 5, isActive: false },
-  { id: 'npc_noa',    name: 'נועה ר.',   points: 90,  quizCount: 2,  tourCount: 1,  videoCount: 0,  joinedAt: Date.now() - 86400000 * 4,  lastActive: Date.now() - 86400000 * 4, isActive: false },
-];
-
+/** כל המשתמשים ברג'יסטרי המקומי, ממוינים לפי נקודות. משתמשים אמיתיים בלבד. */
 export async function getAllUsers(): Promise<UserEntry[]> {
   const raw = await AsyncStorage.getItem(KEY);
-  const realUsers: UserEntry[] = raw ? JSON.parse(raw) : [];
-  const demoIds = new Set(DEMO_USERS.map((u) => u.id));
-  const filteredReal = realUsers.filter((u) => !demoIds.has(u.id));
-  return [...filteredReal, ...DEMO_USERS].sort((a, b) => b.points - a.points);
+  const users: UserEntry[] = raw ? JSON.parse(raw) : [];
+  // ניקוי רשומות npc ישנות שנשמרו בגרסאות קודמות
+  return users.filter((u) => !u.id.startsWith('npc_')).sort((a, b) => b.points - a.points);
 }
 
 export async function getRealUsers(): Promise<UserEntry[]> {
@@ -48,13 +38,11 @@ export async function upsertUser(entry: UserEntry): Promise<void> {
 }
 
 export async function deleteUser(id: string): Promise<void> {
-  if (id.startsWith('npc_')) return;
   const users = await getRealUsers();
   await AsyncStorage.setItem(KEY, JSON.stringify(users.filter((u) => u.id !== id)));
 }
 
 export async function resetUserPoints(id: string): Promise<void> {
-  if (id.startsWith('npc_')) return;
   const users = await getRealUsers();
   const u = users.find((u) => u.id === id);
   if (u) { u.points = 0; await AsyncStorage.setItem(KEY, JSON.stringify(users)); }

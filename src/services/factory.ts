@@ -2,6 +2,7 @@
  * Factory מרכזי לבחירת מימושי השירותים.
  * זו הנקודה היחידה שבה מחליטים mock מול אמיתי - שאר הקוד לא יודע ולא אכפת לו.
  */
+import { Platform } from 'react-native';
 import { resolveLlmProvider } from '@/config/env';
 import type { PoiProvider } from './poi/PoiProvider';
 import { WikipediaPoiProvider } from './poi/WikipediaPoiProvider';
@@ -10,6 +11,7 @@ import { MockLLMProvider } from './llm/MockLLMProvider';
 import { EdgeFunctionLLMProvider } from './llm/EdgeFunctionLLMProvider';
 import type { TTSProvider } from './tts/TTSProvider';
 import { ExpoSpeechTTS } from './tts/ExpoSpeechTTS';
+import { BackendAudioTTS } from './tts/BackendAudioTTS';
 
 let poiProvider: PoiProvider | null = null;
 let mockLlmProvider: LLMProvider | null = null;
@@ -35,6 +37,10 @@ export function getLlmProvider(hasAuthToken = false): LLMProvider {
 }
 
 export function getTtsProvider(): TTSProvider {
-  if (!ttsProvider) ttsProvider = new ExpoSpeechTTS();
+  // web: mp3 מהשרת (edge-tts) - עובד בכל דפדפן, גם בטלפונים בלי קול עברי מותקן.
+  // native: קול המכשיר (עובד offline, ללא המתנה לשרת).
+  if (!ttsProvider) {
+    ttsProvider = Platform.OS === 'web' ? new BackendAudioTTS() : new ExpoSpeechTTS();
+  }
   return ttsProvider;
 }

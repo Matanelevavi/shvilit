@@ -1,5 +1,6 @@
 """שלב 5: הרכבת וידאו עם FFmpeg - Ken Burns, crossfade, כתוביות, ומיזוג אודיו."""
 import asyncio
+import math
 import os
 from typing import List, Optional, Tuple
 
@@ -68,9 +69,30 @@ async def _solid_color_video(audio_path: str, out_path: str, duration: float, sr
     await _run(args, cwd=cwd)
 
 
+# כמה שניות מקסימום תמונה אחת מוצגת לפני שעוברים לבאה.
+# כשהאודיו ארוך מכמות התמונות, התמונות חוזרות בלופ (1,2,3,1,2,3...)
+# במקום שכל תמונה "תיתקע" על המסך דקות ארוכות.
+_MAX_SEC_PER_IMAGE = 10.0
+# תקרה למספר מקטעי הווידאו - שומר על גרף ffmpeg סביר בסרטונים ארוכים.
+_MAX_SEGMENTS = 60
+
+
+def _loop_images(image_paths: List[str], audio_duration: float) -> List[str]:
+    n = len(image_paths)
+    if n < 2:
+        return image_paths
+    if audio_duration / n <= _MAX_SEC_PER_IMAGE:
+        return image_paths
+    needed = min(_MAX_SEGMENTS, math.ceil(audio_duration / _MAX_SEC_PER_IMAGE))
+    if needed <= n:
+        return image_paths
+    return [image_paths[i % n] for i in range(needed)]
+
+
 async def assemble(
     image_paths: List[str], audio_path: str, out_path: str, audio_duration: float, srt_path: Optional[str] = None
 ) -> None:
+    image_paths = _loop_images(image_paths, audio_duration)
     n = len(image_paths)
     if n == 0:
         await _solid_color_video(audio_path, out_path, audio_duration, srt_path)
