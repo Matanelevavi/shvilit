@@ -61,7 +61,7 @@ function profileToEntry(p: SupabaseProfile): UserEntry {
 
 export default function AdminScreen() {
   const router = useRouter();
-  const { user: authUser } = useAuth();
+  const { user: authUser, loading: authLoading } = useAuth();
   const [allowed, setAllowed] = useState<boolean | null>(null);
   const [users, setUsers] = useState<UserEntry[]>([]);
   const [supabaseMode, setSupabaseMode] = useState(false);
@@ -71,6 +71,9 @@ export default function AdminScreen() {
   // שמירת המסך: רק אדמין (לפי מייל Google) או מי שפתח מצב מפתח נכנס.
   // בלעדיה, כל מי שמנווט ישירות ל-/admin (למשל ב-URL בדפדפן) רואה את הפאנל.
   useFocusEffect(useCallback(() => {
+    // חשוב: לא מחליטים לפני שה-session נטען - אחרת בכניסה ישירה ל-/admin
+    // (רענון דף בדפדפן) authUser עדיין null וגם אדמין אמיתי מועף החוצה.
+    if (authLoading) return;
     let mounted = true;
     (async () => {
       const ok = authUser?.email === ADMIN_EMAIL || (await isAdminUnlocked());
@@ -79,7 +82,7 @@ export default function AdminScreen() {
       if (!ok) router.replace('/');
     })();
     return () => { mounted = false; };
-  }, [authUser?.email]));
+  }, [authLoading, authUser?.email]));
 
   const load = useCallback(async () => {
     // הרשת (Supabase) והאחסון המקומי לא תלויים זה בזה - נטענים במקביל
