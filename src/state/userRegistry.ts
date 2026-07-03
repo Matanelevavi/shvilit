@@ -6,6 +6,8 @@ const ADMIN_KEY = 'shvilit_admin_unlocked';
 export interface UserEntry {
   id: string;
   name: string;
+  email?: string;
+  isAdmin?: boolean;
   points: number;
   quizCount: number;
   tourCount: number;
@@ -15,7 +17,7 @@ export interface UserEntry {
   isActive: boolean;
 }
 
-const DEMO_USERS: UserEntry[] = [
+export const DEMO_USERS: UserEntry[] = [
   { id: 'npc_ronit',  name: 'רונית כ.',  points: 920, quizCount: 18, tourCount: 12, videoCount: 3,  joinedAt: Date.now() - 86400000 * 30, lastActive: Date.now() - 3600000,      isActive: true  },
   { id: 'npc_amir',   name: 'אמיר ג.',   points: 750, quizCount: 14, tourCount: 9,  videoCount: 2,  joinedAt: Date.now() - 86400000 * 25, lastActive: Date.now() - 7200000,      isActive: true  },
   { id: 'npc_yael',   name: 'יעל ש.',    points: 640, quizCount: 11, tourCount: 7,  videoCount: 5,  joinedAt: Date.now() - 86400000 * 20, lastActive: Date.now() - 86400000,     isActive: false },

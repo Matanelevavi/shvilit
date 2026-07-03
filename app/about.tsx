@@ -78,7 +78,7 @@ export default function AboutScreen() {
           </View>
           <View style={styles.creatorInfo}>
             <Text style={styles.creatorBuilt}>פותחה על ידי</Text>
-            <Text style={styles.creatorName}>מתנאל אלבבי</Text>
+            <Text style={styles.creatorName}>מתנאל לבבי</Text>
             <Text style={styles.creatorRole}>מפתח FullStack · סטודנט למדעי המחשב</Text>
           </View>
         </LinearGradient>
@@ -147,7 +147,7 @@ export default function AboutScreen() {
 
       {/* Footer */}
       <Text style={styles.footer}>
-        © {new Date().getFullYear()} מתנאל אלבבי · כל הזכויות שמורות{'\n'}
+        © {new Date().getFullYear()} מתנאל לבבי · כל הזכויות שמורות{'\n'}
         שבילית אינה קשורה לוויקיפדיה או ל-Google
       </Text>
     </ScrollView>

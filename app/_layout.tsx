@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { I18nManager, LogBox } from 'react-native';
+import { I18nManager, LogBox, Platform } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -31,8 +31,9 @@ function AuthGate() {
 
   useEffect(() => {
     if (loading) return;
-    const onLogin = segments[0] === 'login';
-    if (!isAuthed && !onLogin) {
+    const onLogin    = segments[0] === 'login';
+    const onCallback = segments[0] === 'auth'; // /auth/callback - לא לנתב ממנו
+    if (!isAuthed && !onLogin && !onCallback) {
       router.replace('/login');
     } else if (isAuthed && onLogin) {
       router.replace('/');
@@ -56,13 +57,24 @@ function AuthGate() {
       <Stack.Screen name="saved" options={{ title: 'הסיורים שלי' }} />
       <Stack.Screen name="quiz/[id]" options={{ title: 'חידון' }} />
       <Stack.Screen name="profile" options={{ title: 'האזור האישי שלי' }} />
-      <Stack.Screen name="about"   options={{ title: 'אודות שבילית' }} />
-      <Stack.Screen name="admin"   options={{ title: 'פאנל ניהול', headerStyle: { backgroundColor: '#0a2a1e' } }} />
+      <Stack.Screen name="about"         options={{ title: 'אודות שבילית' }} />
+      <Stack.Screen name="admin"         options={{ title: 'פאנל ניהול', headerStyle: { backgroundColor: '#0a2a1e' } }} />
+      <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
     </Stack>
   );
 }
 
 export default function RootLayout() {
+  // הסרת מסך הטעינה של ה-web (boot splash מ-+html.tsx) ברגע שהאפליקציה עולה.
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined') return;
+    const el = document.getElementById('boot-splash');
+    if (!el) return;
+    el.classList.add('hide');
+    const t = setTimeout(() => el.remove(), 450);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />

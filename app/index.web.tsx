@@ -27,7 +27,7 @@ import { wikiImage } from '@/ui/wikiImage';
 const DEFAULT_CENTER: Coordinate = { latitude: 31.7767, longitude: 35.2345 };
 const SUGGESTIONS = [
   { label: 'הכותל המערבי', icon: 'business-outline' },
-  { label: 'מצדה',         icon: 'mountain-outline' },
+  { label: 'מצדה',         icon: 'trail-sign-outline' },
   { label: 'עיר דוד',      icon: 'map-outline'      },
   { label: 'קיסריה',       icon: 'boat-outline'     },
   { label: 'ים המלח',      icon: 'water-outline'    },
@@ -262,7 +262,7 @@ export default function MapScreenWeb() {
             onPress={() => router.push({ pathname: '/profile', params: { tab: 'board' } })}
             activeOpacity={0.85}
           >
-            <Text style={styles.rankTeaserEmoji}>{rank.name === 'מתחיל' ? '🌱' : rank.name === 'מטייל' ? '🥾' : rank.name === 'מדריך מתלמד' ? '🎒' : rank.name === 'מדריך מומחה' ? '🗺' : '🏆'}</Text>
+            <Text style={styles.rankTeaserEmoji}>{rank.emoji}</Text>
             <View style={styles.rankTeaserBody}>
               <Text style={styles.rankTeaserName}>{rank.name} · {points} נקודות</Text>
               {rank.nextName && <Text style={styles.rankTeaserNext}>עוד {rank.pointsToNext} נק' לתואר "{rank.nextName}"</Text>}

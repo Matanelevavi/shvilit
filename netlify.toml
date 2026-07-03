@@ -1,5 +1,5 @@
 [build]
-  command = "npx expo export --platform web --clear"
+  command = "npx expo export --platform web --clear && node scripts/inject-splash.js"
   publish = "dist"
 
 [build.environment]
@@ -7,3 +7,11 @@
   EXPO_PUBLIC_LLM_PROVIDER = "auto"
   EXPO_PUBLIC_SUPABASE_URL = "https://ieheudkkouzwyjnpvaby.supabase.co"
   EXPO_PUBLIC_SUPABASE_ANON_KEY = "sb_publishable_xzEuVSoVTary0rPs3ZbLYw_eHBcXSTd"
+  EXPO_PUBLIC_GOOGLE_ENABLED = "true"
+
+# SPA fallback: כל נתיב (כולל /auth/callback שאליו Google מפנה אחרי OAuth)
+# מוגש מ-index.html במקום להחזיר 404
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -8,24 +8,26 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '@/ui/theme';
+import { useAuth } from '@/auth/AuthProvider';
 import {
   getAllUsers,
   deleteUser,
   resetUserPoints,
   formatLastActive,
+  isAdminUnlocked,
   type UserEntry,
 } from '@/state/userRegistry';
-import { TIERS } from '@/state/gameState';
-
-function getTier(points: number) {
-  let tier = TIERS[0];
-  for (const t of TIERS) { if (points >= t.min) tier = t; }
-  return tier;
-}
+import {
+  getAllProfiles,
+  resetProfilePoints,
+  ADMIN_EMAIL,
+  type SupabaseProfile,
+} from '@/state/supabaseProfile';
+import { getRank } from '@/state/gameState';
 
 function StatCard({ value, label, icon, color }: { value: string | number; label: string; icon: string; color: string }) {
   return (
@@ -37,14 +39,67 @@ function StatCard({ value, label, icon, color }: { value: string | number; label
   );
 }
 
+// כמה זמן אחרי הפעילות האחרונה משתמש עדיין נחשב "פעיל"
+const ACTIVE_WINDOW_MS = 3_600_000;
+
+// ממיר SupabaseProfile ל-UserEntry לתצוגה אחידה
+function profileToEntry(p: SupabaseProfile): UserEntry {
+  return {
+    id: p.id,
+    name: p.name || p.email?.split('@')[0] || 'משתמש',
+    points: p.points,
+    quizCount: p.quiz_count,
+    tourCount: p.tour_count,
+    videoCount: p.video_count,
+    joinedAt: new Date(p.joined_at).getTime(),
+    lastActive: new Date(p.last_active).getTime(),
+    isActive: Date.now() - new Date(p.last_active).getTime() < ACTIVE_WINDOW_MS,
+    email: p.email ?? undefined,
+    isAdmin: p.is_admin,
+  };
+}
+
 export default function AdminScreen() {
+  const router = useRouter();
+  const { user: authUser } = useAuth();
+  const [allowed, setAllowed] = useState<boolean | null>(null);
   const [users, setUsers] = useState<UserEntry[]>([]);
+  const [supabaseMode, setSupabaseMode] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
+  // שמירת המסך: רק אדמין (לפי מייל Google) או מי שפתח מצב מפתח נכנס.
+  // בלעדיה, כל מי שמנווט ישירות ל-/admin (למשל ב-URL בדפדפן) רואה את הפאנל.
+  useFocusEffect(useCallback(() => {
+    let mounted = true;
+    (async () => {
+      const ok = authUser?.email === ADMIN_EMAIL || (await isAdminUnlocked());
+      if (!mounted) return;
+      setAllowed(ok);
+      if (!ok) router.replace('/');
+    })();
+    return () => { mounted = false; };
+  }, [authUser?.email]));
+
   const load = useCallback(async () => {
-    const data = await getAllUsers();
-    setUsers(data);
+    // הרשת (Supabase) והאחסון המקומי לא תלויים זה בזה - נטענים במקביל
+    const [supabaseProfiles, localData] = await Promise.all([
+      getAllProfiles(),
+      getAllUsers(),
+    ]);
+    if (supabaseProfiles.length > 0) {
+      // מיזוג: פרופילים מהענן + כל המשתמשים המקומיים שלא קיימים בענן
+      // (משתמשי אורח מקומיים ו-NPC), בלי כפילויות לפי id.
+      setSupabaseMode(true);
+      const cloudIds  = new Set(supabaseProfiles.map((p) => p.id));
+      const cloudRows = supabaseProfiles.map(profileToEntry);
+      const localOnly = localData.filter((u) => !cloudIds.has(u.id));
+      setUsers([...cloudRows, ...localOnly].sort((a, b) => b.points - a.points));
+    } else {
+      // Supabase לא זמין - נתונים מקומיים בלבד
+      setSupabaseMode(false);
+      setUsers(localData);
+    }
   }, []);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
@@ -54,6 +109,9 @@ export default function AdminScreen() {
     await load();
     setRefreshing(false);
   };
+
+  // משתמש שמקורו בענן מזוהה לפי שדה email (רק פרופילים מ-Supabase כוללים אותו)
+  const isCloudUser = (u: UserEntry) => !!u.email;
 
   const onReset = (user: UserEntry) => {
     if (user.id.startsWith('npc_')) {
@@ -67,7 +125,18 @@ export default function AdminScreen() {
         { text: 'ביטול', style: 'cancel' },
         {
           text: 'אפס', style: 'destructive',
-          onPress: async () => { await resetUserPoints(user.id); load(); },
+          onPress: async () => {
+            if (isCloudUser(user)) {
+              const { error } = await resetProfilePoints(user.id);
+              if (error) {
+                Alert.alert('האיפוס נכשל', error);
+                return;
+              }
+            } else {
+              await resetUserPoints(user.id);
+            }
+            load();
+          },
         },
       ],
     );
@@ -76,6 +145,15 @@ export default function AdminScreen() {
   const onDelete = (user: UserEntry) => {
     if (user.id.startsWith('npc_')) {
       Alert.alert('לא ניתן', 'שחקני AI אינם ניתנים למחיקה.');
+      return;
+    }
+    // מחיקת חשבון Google דורשת service_role key שאסור לחשוף באפליקציה -
+    // אפשרית רק מלוח הבקרה של Supabase. לא מציגים כפתור שמשקר.
+    if (isCloudUser(user)) {
+      Alert.alert(
+        'מחיקה דרך Supabase',
+        'משתמש שנרשם עם Google נמחק רק מלוח הבקרה של Supabase (Authentication → Users). מחיקה מכאן תדרוש חשיפת מפתח סודי באפליקציה.',
+      );
       return;
     }
     Alert.alert(
@@ -97,6 +175,11 @@ export default function AdminScreen() {
   const activeNow     = users.filter((u) => u.isActive).length;
   const realUsers     = users.filter((u) => !u.id.startsWith('npc_'));
 
+  // עד שבדיקת ההרשאה מסתיימת (או כשנכשלה וההפניה בדרך) - לא מציגים כלום
+  if (allowed !== true) {
+    return <View style={styles.container} />;
+  }
+
   return (
     <ScrollView
       style={styles.container}
@@ -115,6 +198,12 @@ export default function AdminScreen() {
         <Text style={styles.headerSub}>
           {realUsers.length} משתמשים אמיתיים · {users.length} סה"כ
         </Text>
+        <View style={[styles.modeBadge, supabaseMode ? styles.modeBadgeLive : styles.modeBadgeLocal]}>
+          <Ionicons name={supabaseMode ? 'cloud-done-outline' : 'phone-portrait-outline'} size={12} color={supabaseMode ? '#6ee7b7' : '#9bb3a6'} />
+          <Text style={[styles.modeBadgeText, { color: supabaseMode ? '#6ee7b7' : '#9bb3a6' }]}>
+            {supabaseMode ? 'Supabase - נתונים חיים' : 'מקומי - אין חיבור Supabase'}
+          </Text>
+        </View>
       </LinearGradient>
 
       {/* Stats */}
@@ -155,7 +244,7 @@ export default function AdminScreen() {
       </View>
 
       {users.map((user, idx) => {
-        const tier = getTier(user.points);
+        const tier = getRank(user.points);
         const isExpanded = expandedId === user.id;
         const isNpc = user.id.startsWith('npc_');
         return (
@@ -178,8 +267,12 @@ export default function AdminScreen() {
               <View style={styles.userNameRow}>
                 <Text style={styles.userName}>{user.name}</Text>
                 {isNpc && <View style={styles.npcBadge}><Text style={styles.npcBadgeText}>AI</Text></View>}
+                {user.isAdmin && <View style={styles.adminUserBadge}><Text style={styles.adminUserBadgeText}>ADMIN</Text></View>}
                 {user.isActive && <View style={styles.onlineDot} />}
               </View>
+              {user.email && !isNpc && (
+                <Text style={styles.userEmail} numberOfLines={1}>{user.email}</Text>
+              )}
               <Text style={styles.userTier}>{tier.emoji} {tier.name}</Text>
             </View>
 
@@ -249,7 +342,7 @@ export default function AdminScreen() {
 
       <Text style={styles.footer}>
         * שחקני AI משמשים להשלמת לוח התוצאות{'\n'}
-        הנתונים מאוחסנים מקומית במכשיר
+        {supabaseMode ? 'נתונים חיים מ-Supabase · עודכן כרגע' : 'נתונים מאוחסנים מקומית במכשיר'}
       </Text>
     </ScrollView>
   );
@@ -275,6 +368,20 @@ const styles = StyleSheet.create({
   },
   adminBadgeText: { fontSize: 11, fontWeight: '800', color: '#e8a33d', letterSpacing: 1 },
   headerSub: { fontSize: 13, color: '#9bbfaf', textAlign: 'right', marginTop: theme.spacing(0.75) },
+  modeBadge: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: theme.spacing(1),
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 999,
+    alignSelf: 'flex-end',
+    borderWidth: 1,
+  },
+  modeBadgeLive:  { backgroundColor: 'rgba(110,231,183,0.1)', borderColor: 'rgba(110,231,183,0.3)' },
+  modeBadgeLocal: { backgroundColor: 'rgba(155,179,166,0.1)', borderColor: 'rgba(155,179,166,0.2)' },
+  modeBadgeText:  { fontSize: 10, fontWeight: '600' },
 
   statsRow: {
     flexDirection: 'row-reverse',
@@ -358,7 +465,17 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: '#22a06b',
   },
-  userTier: { fontSize: 12, color: theme.colors.textMuted, textAlign: 'right', marginTop: 2 },
+  userEmail: { fontSize: 11, color: theme.colors.textMuted, textAlign: 'right', marginTop: 1 },
+  userTier:  { fontSize: 12, color: theme.colors.textMuted, textAlign: 'right', marginTop: 1 },
+  adminUserBadge: {
+    backgroundColor: 'rgba(232,163,61,0.15)',
+    borderRadius: 999,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderWidth: 1,
+    borderColor: 'rgba(232,163,61,0.35)',
+  },
+  adminUserBadgeText: { fontSize: 8, fontWeight: '800', color: '#e8a33d', letterSpacing: 0.5 },
   userPoints: { alignItems: 'center' },
   userPointsNum: { fontSize: 18, fontWeight: '800', color: theme.colors.primary },
   userPointsLabel: { fontSize: 10, color: theme.colors.textMuted },

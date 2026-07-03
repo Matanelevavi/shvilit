@@ -24,21 +24,13 @@ import { countWords } from '@/domain/tourLength';
 import { TOUR_STYLE_LABELS } from '@/domain/types';
 import { wikiImage } from '@/ui/wikiImage';
 import { theme } from '@/ui/theme';
-import { upsertUser, isAdminUnlocked } from '@/state/userRegistry';
-
-const NPC_PLAYERS = [
-  { name: 'רונית כ.', points: 920 },
-  { name: 'אמיר ג.',  points: 750 },
-  { name: 'יעל ש.',   points: 640 },
-  { name: 'דוד מ.',   points: 430 },
-  { name: 'מיכל א.', points: 280 },
-  { name: 'שי פ.',    points: 150 },
-];
+import { upsertUser, deleteUser, isAdminUnlocked, DEMO_USERS } from '@/state/userRegistry';
+import { syncProfileToSupabase, ADMIN_EMAIL } from '@/state/supabaseProfile';
 
 function buildLeaderboard(myName: string, myPoints: number) {
   const all = [
     { name: myName, points: myPoints, isMe: true },
-    ...NPC_PLAYERS.map((p) => ({ ...p, isMe: false })),
+    ...DEMO_USERS.map((p) => ({ name: p.name, points: p.points, isMe: false })),
   ];
   return all.sort((a, b) => b.points - a.points);
 }
@@ -74,7 +66,7 @@ function RankBar({ progress, nextName, pointsToNext }: { progress: number; nextN
 export default function ProfileScreen() {
   const router = useRouter();
   const { profile, clearProfile } = useLocalProfile();
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const params = useLocalSearchParams<{ tab?: string }>();
 
   const [points, setPoints] = useState(0);
@@ -94,14 +86,24 @@ export default function ProfileScreen() {
     setQuizHistory(quizzes);
     setSavedVideos(videos);
     setSavedTours(tours);
-    const adminOk = await isAdminUnlocked();
-    setAdminEnabled(adminOk);
 
-    // סנכרון נתוני המשתמש הנוכחי לרג'יסטרי
-    if (profile) {
+    // admin: לפי מייל Google (המסמך המחייב הוא ה-RLS בשרת; זה רק לתצוגת התפריט)
+    // או לפי פתיחת מצב מפתח מקומית (7 הקשות במסך אודות)
+    const adminByUnlock = await isAdminUnlocked();
+    setAdminEnabled(user?.email === ADMIN_EMAIL || adminByUnlock);
+
+    // שם להצגה: Google name > local profile > 'שחקן'
+    const displayName = user?.user_metadata?.full_name || profile?.name || 'שחקן';
+    const legacyLocalId = profile
+      ? profile.name.replace(/\s+/g, '_').toLowerCase() + '_local'
+      : null;
+
+    // סנכרון לרג'יסטרי המקומי
+    if (profile || user) {
       await upsertUser({
-        id: profile.name.replace(/\s+/g, '_').toLowerCase() + '_local',
-        name: profile.name,
+        id: user?.id ?? legacyLocalId!,
+        name: displayName,
+        email: user?.email,
         points: pts,
         quizCount: quizzes.length,
         tourCount: tours.length,
@@ -110,8 +112,24 @@ export default function ProfileScreen() {
         lastActive: Date.now(),
         isActive: true,
       });
+      // מי שהתחבר עם Google אחרי ששיחק כאורח - מוחקים את הרשומה הישנה
+      // כדי שלא יופיע פעמיים בפאנל הניהול
+      if (user && legacyLocalId) {
+        await deleteUser(legacyLocalId);
+      }
     }
-  }, [profile]);
+
+    // סנכרון לסופאבייס (אם המשתמש מחובר עם Google)
+    if (user) {
+      await syncProfileToSupabase({
+        name: displayName,
+        points: pts,
+        quizCount: quizzes.length,
+        tourCount: tours.length,
+        videoCount: videos.length,
+      });
+    }
+  }, [profile, user]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
@@ -152,7 +170,12 @@ export default function ProfileScreen() {
         <View style={styles.heroRow}>
           <Text style={styles.rankEmoji}>{rank.emoji}</Text>
           <View style={styles.heroCenter}>
-            <Text style={styles.heroName}>{profile?.name ?? 'שחקן'}</Text>
+            <Text style={styles.heroName}>
+              {user?.user_metadata?.full_name || profile?.name || 'שחקן'}
+            </Text>
+            {user?.email && (
+              <Text style={styles.heroEmail}>{user.email}</Text>
+            )}
             <Text style={styles.heroRank}>{rank.name}</Text>
           </View>
           <View style={styles.pointsBadge}>
@@ -276,7 +299,7 @@ export default function ProfileScreen() {
                 </View>
                 <View style={styles.itemCardBody}>
                   <Text style={styles.itemCardTitle} numberOfLines={1}>{v.location}</Text>
-                  <Text style={styles.itemCardMeta}>{v.minutes} דקות · {TOUR_STYLE_LABELS[v.style as any] ?? v.style} · {formatDate(v.savedAt)}</Text>
+                  <Text style={styles.itemCardMeta}>{v.minutes} דקות · {(TOUR_STYLE_LABELS as Record<string, string>)[v.style] ?? v.style} · {formatDate(v.savedAt)}</Text>
                 </View>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => deleteVideo(v.location)} hitSlop={8}>
@@ -363,8 +386,9 @@ const styles = StyleSheet.create({
   heroRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: theme.spacing(1.5) },
   rankEmoji: { fontSize: 42 },
   heroCenter: { flex: 1 },
-  heroName: { color: '#fff', fontSize: 20, fontWeight: '800', textAlign: 'right' },
-  heroRank: { color: 'rgba(255,255,255,0.75)', fontSize: 14, textAlign: 'right' },
+  heroName:  { color: '#fff', fontSize: 20, fontWeight: '800', textAlign: 'right' },
+  heroEmail: { color: 'rgba(255,255,255,0.6)', fontSize: 11, textAlign: 'right', marginTop: 1 },
+  heroRank:  { color: 'rgba(255,255,255,0.75)', fontSize: 14, textAlign: 'right' },
   pointsBadge: { alignItems: 'center', backgroundColor: theme.colors.accent, borderRadius: 14, paddingVertical: 6, paddingHorizontal: 14 },
   pointsNum: { fontSize: 24, fontWeight: '900', color: theme.colors.accentDark },
   pointsLabel: { fontSize: 10, color: theme.colors.accentDark, fontWeight: '600' },

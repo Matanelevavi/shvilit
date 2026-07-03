@@ -36,9 +36,9 @@ export default function VideoTourScreen() {
   const [saved, setSaved] = useState(false);
 
   const activeRef = useRef(true);
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const startedRef = useRef<number>(0);
-  const msgTimerRef = useRef<ReturnType<typeof setInterval>>();
+  const msgTimerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const geminiRetryRef = useRef(0);
   const locationRef = useRef('');
 

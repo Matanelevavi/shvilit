@@ -5,6 +5,7 @@ import React, {
   useMemo,
   useState,
 } from 'react';
+import { Platform } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import type { Session, User } from '@supabase/supabase-js';
@@ -91,6 +92,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!config.hasSupabase || !supabase) {
       throw new Error('Supabase לא הוגדר. ראה README להגדרת ההתחברות.');
     }
+
+    if (Platform.OS === 'web') {
+      // Web: הפנייה ישירה לדף OAuth של Google
+      const redirectTo = `${window.location.origin}/auth/callback`;
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo },
+      });
+      if (error) throw error;
+      // Supabase JS מנתב את הדפדפן אוטומטית. אם לא - ננתב ידנית.
+      if (data?.url) window.location.href = data.url;
+      return;
+    }
+
+    // Native (iOS/Android): WebBrowser + PKCE
     const redirectTo = Linking.createURL('auth/callback');
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
