@@ -12,7 +12,7 @@ from typing import List, Optional, Tuple
 
 import httpx
 
-from .config import HTTP_HEADERS, TARGET_IMAGES
+from .config import FFMPEG_BIN, HTTP_HEADERS, TARGET_IMAGES
 
 WIKI_API = "https://he.wikipedia.org/w/api.php"
 COMMONS_API = "https://commons.wikimedia.org/w/api.php"
@@ -192,6 +192,52 @@ async def _keyword_image_urls(client: httpx.AsyncClient, keywords: List[str], wa
     return urls
 
 
+# ─── סינון כפילויות לפי תוכן ─────────────────────────────────────────────────
+# dedup לפי URL לא מספיק: קטגוריות Commons מכילות לעיתים סדרות צילומים
+# כמעט זהים בשמות קבצים שונים (למשל צילומי פנים של אותו חדר מוזיאון).
+# בסרטון זה נראה כאילו "תמונה אחת תקועה" כי ה-crossfade בין זהות בלתי נראה.
+
+_DUP_THRESHOLD = 10.0  # הפרש אפור ממוצע לפיקסל; זהות/כמעט-זהות = 0-5, שוט שונה = 25+
+
+
+_SIG_BYTES = 16 * 16 * 3  # 16x16 פיקסלים ב-RGB
+
+
+async def _rgb_signature(path: str) -> Optional[bytes]:
+    """חתימת תוכן ויזואלית: התמונה מוקטנת ל-16x16 RGB (768 בייטים).
+
+    RGB ולא גווני אפור - צבעים שונים בעלי בהירות דומה לא מתנגשים.
+    """
+    proc = await asyncio.create_subprocess_exec(
+        FFMPEG_BIN, "-v", "error", "-i", path, "-frames:v", "1",
+        "-vf", "scale=16:16", "-f", "rawvideo", "-pix_fmt", "rgb24", "-",
+        stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+    )
+    out, _ = await proc.communicate()
+    if proc.returncode != 0 or len(out) < _SIG_BYTES:
+        return None  # קובץ פגום - גם סיבה טובה לפסול אותו
+    return bytes(out[:_SIG_BYTES])
+
+
+def _avg_diff(a: bytes, b: bytes) -> float:
+    return sum(abs(x - y) for x, y in zip(a, b)) / len(a)
+
+
+async def _dedup_by_content(paths: List[str]) -> List[str]:
+    """משאיר רק תמונות שנבדלות ויזואלית מכל אלו שכבר נשמרו (וזורק פגומות)."""
+    sigs = await asyncio.gather(*[_rgb_signature(p) for p in paths])
+    kept: List[str] = []
+    kept_sigs: List[bytes] = []
+    for path, sig in zip(paths, sigs):
+        if sig is None:
+            continue
+        if any(_avg_diff(sig, k) < _DUP_THRESHOLD for k in kept_sigs):
+            continue
+        kept.append(path)
+        kept_sigs.append(sig)
+    return kept
+
+
 async def fetch_images(location: str, dest_dir: str, keywords: Optional[List[str]] = None, want: int = TARGET_IMAGES) -> List[str]:
     os.makedirs(dest_dir, exist_ok=True)
     async with httpx.AsyncClient(timeout=30, headers=HTTP_HEADERS) as client:
@@ -231,7 +277,8 @@ async def fetch_images(location: str, dest_dir: str, keywords: Optional[List[str
         seen = set()
         unique = [u for u in urls if u and not (u in seen or seen.add(u))]
 
-        chosen = unique[:want]
+        # מורידים כפול מהיעד - חלק ייפסלו בסינון הכפילויות התוכני שאחרי ההורדה.
+        chosen = unique[: want * 2]
         dests = [os.path.join(dest_dir, f"img_{i:02d}.jpg") for i in range(len(chosen))]
         sem = asyncio.Semaphore(5)  # מגביל מקביליות כדי לא לעורר rate-limit.
 
@@ -242,7 +289,9 @@ async def fetch_images(location: str, dest_dir: str, keywords: Optional[List[str
         results = await asyncio.gather(
             *[_bounded(u, d) for u, d in zip(chosen, dests)], return_exceptions=True
         )
-        return [
+        downloaded = [
             d for ok, d in zip(results, dests)
             if ok is True and os.path.exists(d) and os.path.getsize(d) > 1000
         ]
+        distinct = await _dedup_by_content(downloaded)
+        return distinct[:want]
