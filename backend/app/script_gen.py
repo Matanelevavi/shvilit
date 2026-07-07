@@ -1,5 +1,6 @@
 """שלב 2: יצירת תסריט הסיור באמצעות Gemini API (עם retry ו-fallback בין מודלים)."""
 import asyncio
+import re
 
 import httpx
 
@@ -40,6 +41,8 @@ def _build_prompt(location: str, duration_minutes: int, style: str) -> str:
             f"3. {style_line}",
             "4. חלק לפסקאות קצרות (2-4 משפטים) מופרדות בשורה ריקה. ללא כותרות, ללא נקודות תבליט, ללא הערות במאמר מוסגר.",
             "5. עברית תקנית וזורמת, מתאימה להקראה קולית רציפה.",
+            "6. אסור לכלול הוראות בימוי, קריינות או אווירה - לא בסוגריים ולא בכל צורה",
+            "   אחרת (למשל: '(קול שקט ודרמטי)'). רק הטקסט המוקרא עצמו.",
             "",
             "כתוב כעת רק את תסריט הסיור עצמו:",
         ]
@@ -63,6 +66,26 @@ def _extract(data: dict) -> str:
         return ""
 
 
+# שורה שכולה הוראת בימוי בסוגריים, למשל: "(קול שקט, מעט דרמטי, עם הפסקות קלות)"
+_STAGE_LINE_RE = re.compile(r"^\s*[\(\[][^\)\]]{0,150}[\)\]]\s*[:.\-]?\s*$")
+# הוראת בימוי צמודה לתחילת פסקה: "(בקול דרמטי) פעם, לפני שנים..."
+_STAGE_PREFIX_RE = re.compile(r"^\s*\([^)\n]{0,150}\)\s*", re.MULTILINE)
+
+
+def _clean_script(text: str) -> str:
+    """מסיר הוראות בימוי/קריינות שמודלים מוסיפים לפעמים למרות ההנחיה.
+
+    הן גם מוצגות למשתמש וגם מוקראות ע"י ה-TTS - חייבות לרדת.
+    """
+    lines = [ln for ln in text.splitlines() if not _STAGE_LINE_RE.match(ln)]
+    cleaned = "\n".join(lines)
+    cleaned = _STAGE_PREFIX_RE.sub("", cleaned)
+    cleaned = cleaned.replace("**", "").replace("##", "")
+    # צמצום שורות ריקות עודפות שנשארו אחרי המחיקה
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    return cleaned.strip()
+
+
 async def generate_script(location: str, duration_minutes: int, style: str) -> str:
     if not GEMINI_API_KEY:
         raise RuntimeError("GEMINI_API_KEY חסר. הוסף אותו ל-backend/.env")
@@ -80,7 +103,7 @@ async def generate_script(location: str, duration_minutes: int, style: str) -> s
             for attempt in range(3):
                 resp = await client.post(url, params={"key": GEMINI_API_KEY}, json=payload)
                 if resp.status_code == 200:
-                    text = _extract(resp.json())
+                    text = _clean_script(_extract(resp.json()))
                     if text:
                         return text
                     last_err = f"{model}: empty response"

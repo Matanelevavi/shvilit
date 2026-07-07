@@ -1,6 +1,8 @@
 [build]
   command = "npx expo export --platform web --clear && node scripts/inject-splash.js"
   publish = "dist"
+  # דילוג על build כשכל השינויים הם ב-backend (נפרס ל-HuggingFace, לא לכאן) - חוסך קרדיטים
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- . ':(exclude)backend'"
 
 [build.environment]
   EXPO_PUBLIC_VIDEO_API_URL = "https://matanelevavi-shvilit-backend.hf.space"
