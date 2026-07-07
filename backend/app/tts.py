@@ -1,6 +1,7 @@
 """שלב 3: קול עברי (edge-tts) + כתוביות SRT מסונכרנות + מדידת משך."""
 import asyncio
 import json
+import re
 from typing import List, Optional, Tuple
 
 import edge_tts
@@ -79,13 +80,42 @@ async def synthesize(text: str, style: str, out_path: str, srt_path: Optional[st
     if words and word_start is not None:
         cues.append((word_start, word_end, " ".join(words)))
 
-    cues.sort(key=lambda c: c[0])
-    if srt_path and cues:
-        _write_srt(cues, srt_path)
+    # משך האודיו: word_end הוא ה-timestamp של סוף המילה האחרונה (+0.5 padding).
+    # כששירות ה-TTS לא שולח אירועי WordBoundary (קורה לפעמים) - מודדים את
+    # קובץ ה-mp3 עצמו. בעבר היה כאן fallback שרירותי של 60 שניות שגרם
+    # לסרטונים של דקה אחת במקום האורך המלא.
+    if word_end > 0:
+        duration = word_end + 0.5
+    else:
+        try:
+            duration = await audio_duration_seconds(out_path)
+        except Exception:  # noqa: BLE001
+            duration = 60.0
 
-    # word_end הוא ה-timestamp המדויק של סוף המילה האחרונה.
-    # מוסיפים 0.5 שניות padding לסיום טבעי.
-    return word_end + 0.5 if word_end > 0 else 60.0
+    # כתוביות: מסונכרנות אם יש אירועי תזמון; אחרת מקורבות לפי חלוקת מילים.
+    if srt_path:
+        if not cues:
+            cues = _approx_cues(text, duration)
+        cues.sort(key=lambda c: c[0])
+        if cues:
+            _write_srt(cues, srt_path)
+
+    return duration
+
+
+def _approx_cues(text: str, total_seconds: float) -> List[Cue]:
+    """כתוביות מקורבות: זמן כל משפט יחסי למספר המילים שלו."""
+    sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", text) if s.strip()]
+    total_words = sum(len(s.split()) for s in sentences)
+    if not sentences or total_words == 0 or total_seconds <= 0:
+        return []
+    cues: List[Cue] = []
+    t = 0.0
+    for sentence in sentences:
+        dur = total_seconds * len(sentence.split()) / total_words
+        cues.extend(_split_cue(t, t + dur, sentence))
+        t += dur
+    return cues
 
 
 async def audio_duration_seconds(path: str) -> float:
