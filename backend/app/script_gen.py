@@ -68,18 +68,32 @@ def _extract(data: dict) -> str:
 
 # שורה שכולה הוראת בימוי בסוגריים, למשל: "(קול שקט, מעט דרמטי, עם הפסקות קלות)"
 _STAGE_LINE_RE = re.compile(r"^\s*[\(\[][^\)\]]{0,150}[\)\]]\s*[:.\-]?\s*$")
-# הוראת בימוי צמודה לתחילת פסקה: "(בקול דרמטי) פעם, לפני שנים..."
-_STAGE_PREFIX_RE = re.compile(r"^\s*\([^)\n]{0,150}\)\s*", re.MULTILINE)
+
+# מילות מפתח שמזהות הוראת בימוי (לא עובדה תוכנית). רשימה סגורה בכוונה:
+# בלעדיה, סוגריים לגיטימיים כמו "(בשנת 1948)" היו נמחקים יחד עם התוכן שלהם.
+_STAGE_KEYWORDS = (
+    "קול", "בקול", "קריינות", "קריין", "נרטיב", "הפסק", "השהי", "אווירה",
+    "דרמטי", "מוזיקה", "רקע", "טון", "לחישה", "לחש", "מתח דרמטי", "צליל",
+)
+# הוראת בימוי צמודה לתחילת פסקה, למשל: "(בקול דרמטי) פעם, לפני שנים..."
+# - נמחקת רק כשהתוכן בסוגריים מכיל אחת ממילות המפתח לעיל.
+_STAGE_PREFIX_RE = re.compile(r"^\s*\(([^)\n]{0,150})\)\s*", re.MULTILINE)
 
 
 def _clean_script(text: str) -> str:
     """מסיר הוראות בימוי/קריינות שמודלים מוסיפים לפעמים למרות ההנחיה.
 
-    הן גם מוצגות למשתמש וגם מוקראות ע"י ה-TTS - חייבות לרדת.
+    הן גם מוצגות למשתמש וגם מוקראות ע"י ה-TTS - חייבות לרדת. חשוב לא
+    למחוק סוגריים לגיטימיים (תאריך, שם חלופי וכו') שהמשתמש כן צריך לשמוע.
     """
     lines = [ln for ln in text.splitlines() if not _STAGE_LINE_RE.match(ln)]
     cleaned = "\n".join(lines)
-    cleaned = _STAGE_PREFIX_RE.sub("", cleaned)
+
+    def _strip_if_stage_direction(m: "re.Match[str]") -> str:
+        inner = m.group(1)
+        return "" if any(kw in inner for kw in _STAGE_KEYWORDS) else m.group(0)
+
+    cleaned = _STAGE_PREFIX_RE.sub(_strip_if_stage_direction, cleaned)
     cleaned = cleaned.replace("**", "").replace("##", "")
     # צמצום שורות ריקות עודפות שנשארו אחרי המחיקה
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)

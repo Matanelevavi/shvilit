@@ -11,7 +11,7 @@ pinned: false
 # שבילית - backend הפקת וידאו
 
 שירות FastAPI שמקבל מיקום, אורך וסגנון, ומפיק סיור וידאו מוקרא בעברית:
-Gemini (תסריט) → edge-tts (קול עברי) → Wikipedia (תמונות) → FFmpeg (וידאו עם Ken Burns + crossfade).
+Gemini (תסריט) → edge-tts (קול עברי) → Wikipedia (תמונות) → FFmpeg (וידאו עם Ken Burns + fade).
 תוצאות נשמרות ב-cache (אפס עבודה כפולה).
 
 > שלב מקומי: cache ב-SQLite ואחסון וידאו מקומי. סכמת Supabase מצורפת ב-`supabase_schema.sql`
@@ -56,7 +56,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 2. **Script** (Gemini) - `app/script_gen.py`
 3. **Voice** (edge-tts, קולות `he-IL-AvriNeural` / `he-IL-HilaNeural`) - `app/tts.py`
 4. **Images** (Wikipedia, fallback Unsplash אם יש מפתח) - `app/images.py`
-5. **Video** (FFmpeg: Ken Burns zoompan + xfade crossfade + מיזוג אודיו) - `app/video.py`
+5. **Video** (FFmpeg: קליפ Ken Burns עצמאי לכל תמונה + concat + מיזוג אודיו) - `app/video.py`
 6. **Store + deliver** (מקומי תחת `/videos`, עדכון cache, ניקוי temp) - `app/pipeline.py`
 
 ## חיבור לאפליקציית שבילית
