@@ -11,7 +11,6 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalProfile } from '@/auth/LocalProfile';
 import { useAuth } from '@/auth/AuthProvider';
-import { config } from '@/config/env';
 import {
   getPoints, setPoints as persistPoints, getRank, getQuizHistory, getSavedVideos,
   removeSavedVideo, POINTS_PER_CORRECT, TIERS,
@@ -382,7 +381,7 @@ export default function ProfileScreen() {
 
         <TouchableOpacity
           style={[styles.menuRow, styles.menuRowLast]}
-          onPress={() => config.hasSupabase ? signOut() : clearProfile()}
+          onPress={async () => { await clearProfile(); await signOut(); }}
           activeOpacity={0.8}
         >
           <View style={[styles.menuIcon, { backgroundColor: '#fee2e2' }]}>

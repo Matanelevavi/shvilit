@@ -18,7 +18,6 @@ import { getPoints, getRank, getPendingVideos, removePendingVideo } from '@/stat
 import { getVideoTour } from '@/services/video/videoTourApi';
 import { useAuth } from '@/auth/AuthProvider';
 import { useLocalProfile } from '@/auth/LocalProfile';
-import { config } from '@/config/env';
 import type { Coordinate, Poi } from '@/domain/types';
 import { theme } from '@/ui/theme';
 import { showConfirm } from '@/ui/dialogs';
@@ -38,7 +37,13 @@ export default function MapScreenWeb() {
   const router = useRouter();
   const { signOut } = useAuth();
   const { profile, clearProfile } = useLocalProfile();
-  const onLogout = () => config.hasSupabase ? signOut() : clearProfile();
+  // תמיד מנקים את שני מקורות ההתחברות האפשריים - לא רק לפי config.hasSupabase
+  // (שתמיד true כאן), אחרת אורח עם פרופיל מקומי לא היה יכול לצאת בכלל:
+  // signOut() לא עושה כלום כשאין session, אז clearProfile() חייב לרוץ תמיד.
+  const onLogout = async () => {
+    await clearProfile();
+    await signOut();
+  };
 
   const [pois, setPois] = useState<Poi[]>([]);
   const [loading, setLoading] = useState(false);

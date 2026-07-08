@@ -17,7 +17,6 @@ import { getPoiProvider } from '@/services/factory';
 import { cachePois } from '@/state/store';
 import { useAuth } from '@/auth/AuthProvider';
 import { useLocalProfile } from '@/auth/LocalProfile';
-import { config } from '@/config/env';
 import type { Coordinate, Poi } from '@/domain/types';
 import { theme } from '@/ui/theme';
 import { showAlert, showConfirm } from '@/ui/dialogs';
@@ -36,7 +35,11 @@ export default function MapScreen() {
   const router = useRouter();
   const { signOut } = useAuth();
   const { profile, clearProfile } = useLocalProfile();
-  const onLogout = () => (config.hasSupabase ? signOut() : clearProfile());
+  // תמיד מנקים את שני מקורות ההתחברות האפשריים - ראה הערה זהה ב-index.web.tsx.
+  const onLogout = async () => {
+    await clearProfile();
+    await signOut();
+  };
   const mapRef = useRef<MapView>(null);
   const [region, setRegion] = useState<Region>(DEFAULT_REGION);
   const [pois, setPois] = useState<Poi[]>([]);
