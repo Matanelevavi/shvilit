@@ -6,10 +6,20 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-STORAGE_DIR = BASE_DIR / "storage" / "videos"
-AUDIO_DIR = BASE_DIR / "storage" / "audio"
-TEMP_DIR = BASE_DIR / "storage" / "tmp"
-DB_PATH = BASE_DIR / "storage" / "cache.db"
+
+# אחסון בר-קיימא: אם מותקן HF Storage Bucket (ב-Space, ראה Settings -> Storage
+# Buckets) הוא נכנס לנתיב הזה ומוגדר ע"י PERSIST_DIR. בלעדיו (למשל בפיתוח
+# מקומי) נופלים חזרה לתיקיית ה-repo הרגילה - זמנית, אבל עובד בלי הגדרה נוספת.
+#
+# לפני שהיה bucket, כל push ל-git גרם ל-rebuild מלא של ה-container ב-HF
+# Spaces שמחק את כל הסרטונים וה-cache שנוצרו קודם ("סרטון מאתמול נוצר
+# מחדש") - כי האחסון הישן היה בתוך ה-container הזמני עצמו.
+PERSIST_DIR = Path(os.getenv("PERSIST_DIR", str(BASE_DIR / "storage")))
+
+STORAGE_DIR = PERSIST_DIR / "videos"
+AUDIO_DIR = PERSIST_DIR / "audio"
+TEMP_DIR = PERSIST_DIR / "tmp"
+DB_PATH = PERSIST_DIR / "cache.db"
 
 STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 AUDIO_DIR.mkdir(parents=True, exist_ok=True)
@@ -36,7 +46,6 @@ WORDS_PER_MINUTE = 130
 VIDEO_WIDTH = 1280
 VIDEO_HEIGHT = 720
 FPS = 30
-CROSSFADE_SEC = 1.5
 MIN_IMAGES = 5
 TARGET_IMAGES = 12
 
