@@ -4,6 +4,9 @@
  * בעתיד ניתן להחליף ל-ElevenLabs/Cartesia מאחורי אותו interface.
  */
 export interface TtsCallbacks {
+  /** נקרא ברגע שהבקשה יצאה לדרך, לפני שיש שמע בפועל (למשל תוך כדי הפקת השמע בשרת). */
+  onLoading?: () => void;
+  /** נקרא כשההשמעה בפועל התחילה (יש כבר שמע נשמע). */
   onStart?: () => void;
   onDone?: () => void;
   onStopped?: () => void;

@@ -98,9 +98,24 @@ export default function MapScreenWeb() {
 
   const searchNearby = () => {
     if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      // fallback ידני: בדפדפנים מסוימים getCurrentPosition נתקע בלי לקרוא
+      // לאף callback כשמיקום חסום ברמת המערכת - בלי timeout המסך נשאר תקוע.
+      let done = false;
+      const fallback = setTimeout(() => {
+        if (!done) { done = true; loadNearby(DEFAULT_CENTER); }
+      }, 6000);
       navigator.geolocation.getCurrentPosition(
-        (pos) => loadNearby({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
-        () => loadNearby(DEFAULT_CENTER),
+        (pos) => {
+          if (done) return;
+          done = true; clearTimeout(fallback);
+          loadNearby({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+        },
+        () => {
+          if (done) return;
+          done = true; clearTimeout(fallback);
+          loadNearby(DEFAULT_CENTER);
+        },
+        { timeout: 5500 },
       );
     } else {
       loadNearby(DEFAULT_CENTER);

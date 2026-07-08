@@ -24,7 +24,7 @@ const TECH = [
   { icon: 'book-outline',           label: 'Wikipedia API',      desc: 'מידע אנציקלופדי' },
   { icon: 'map-outline',            label: 'OpenStreetMap',       desc: 'מידע גאוגרפי' },
   { icon: 'cloud-outline',          label: 'HuggingFace Spaces', desc: 'אחסון ה-backend' },
-  { icon: 'globe-outline',          label: 'Netlify',             desc: 'אחסון ה-web app' },
+  { icon: 'globe-outline',          label: 'Cloudflare Workers',  desc: 'אחסון ה-web app' },
 ];
 
 export default function AboutScreen() {

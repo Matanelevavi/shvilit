@@ -18,7 +18,7 @@ import { TOUR_STYLE_LABELS } from '@/domain/types';
 import { theme } from '@/ui/theme';
 import { wikiImage } from '@/ui/wikiImage';
 
-type PlayState = 'idle' | 'playing' | 'paused';
+type PlayState = 'idle' | 'loading' | 'playing' | 'paused';
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 const SPEED_LABELS: Record<number, string> = { 0.5: '0.5×', 0.75: '0.75×', 1: 'רגיל', 1.25: '1.25×', 1.5: '1.5×', 2: '2×' };
 
@@ -86,12 +86,13 @@ export default function TourScreen() {
 
   const startSpeak = (speed: number) => {
     progress.setValue(0);
-    animateFrom(0);
+    setState('loading');
     tts
       .speak(
         tour.text,
         {
-          onStart: () => setState('playing'),
+          onLoading: () => setState('loading'),
+          onStart: () => { setState('playing'); animateFrom(0); },
           onDone: finish,
           onStopped: () => setState('idle'),
           onError: finish,
@@ -120,6 +121,7 @@ export default function TourScreen() {
 
   const onMainPress = () => {
     if (state === 'idle') return startSpeak(rate);
+    if (state === 'loading') return stop();
     if (state === 'playing') return tts.supportsPause ? pause() : stop();
     if (state === 'paused') return resume();
   };
@@ -129,10 +131,13 @@ export default function TourScreen() {
     if (state !== 'idle') { void tts.stop(); startSpeak(speed); }
   };
 
-  // main button: play → pause (if supported) / stop (otherwise). paused → resume.
-  const mainIcon = state === 'idle' ? 'play' : state === 'paused' ? 'play' : tts.supportsPause ? 'pause' : 'stop';
-  // side stop button only when paused OR playing with pause support (so there's no double-stop)
-  const showStop = state !== 'idle' && (state === 'paused' || tts.supportsPause);
+  // main button: play → loading (spinner, ניתן לבטל) → pause (אם נתמך) / stop. paused → resume.
+  const mainIcon =
+    state === 'idle' || state === 'paused' ? 'play'
+    : state === 'loading' ? 'hourglass-outline'
+    : tts.supportsPause ? 'pause' : 'stop';
+  // side stop button כשהמשתמש יכול לבטל/לעצור: בזמן טעינה, השהיה, או השמעה עם pause נתמך
+  const showStop = state !== 'idle' && (state === 'loading' || state === 'paused' || tts.supportsPause);
   const width = progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] });
 
   return (

@@ -36,7 +36,9 @@ export class BackendAudioTTS implements TTSProvider {
     const audio = new Audio(SILENT_WAV);
     audio.play().catch(() => {});
     this.audio = audio;
-    callbacks?.onStart?.();
+    // onStart רק כשיש שמע אמיתי בפועל - לא מיד אחרי ה-WAV השקט, אחרת
+    // הכפתור מציג "מתנגן" בזמן שבפועל עדיין שקט (הפקת השמע בשרת לוקחת זמן).
+    callbacks?.onLoading?.();
 
     try {
       const res = await fetch(`${config.videoApiUrl}/generate-audio`, {
@@ -51,6 +53,9 @@ export class BackendAudioTTS implements TTSProvider {
 
       audio.src = audio_url;
       audio.playbackRate = rate;
+      audio.onplaying = () => {
+        if (session === this.session) callbacks?.onStart?.();
+      };
       audio.onended = () => {
         if (session === this.session) callbacks?.onDone?.();
       };

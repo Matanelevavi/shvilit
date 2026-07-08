@@ -28,7 +28,7 @@ import { wikiImage } from '@/ui/wikiImage';
 const STYLE_META: Record<TourStyle, { emoji: string; desc: string; color: string }> = {
   historical: { emoji: '🏛',  desc: 'עובדות היסטוריות ורקע תרבותי', color: '#7c5c2e' },
   mystery:    { emoji: '🔍',  desc: 'מסתורין, אגדות וסיפורים נסתרים', color: '#4a3060' },
-  kids:       { emoji: '🎈',  desc: 'הסבר כיפי ומתאים לכל הגיל', color: '#1a6b40' },
+  kids:       { emoji: '🎈',  desc: 'הסבר כיפי ומתאים לכל גיל', color: '#1a6b40' },
 };
 
 const LENGTH_META: Record<number, { label: string; words: string; icon: string }> = {
