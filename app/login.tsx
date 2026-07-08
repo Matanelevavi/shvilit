@@ -145,6 +145,10 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </>
       )}
+
+      <TouchableOpacity onPress={() => router.push('/privacy')} style={styles.privacyLink} activeOpacity={0.7}>
+        <Text style={styles.privacyLinkText}>מדיניות פרטיות</Text>
+      </TouchableOpacity>
     </LinearGradient>
   );
 }
@@ -200,4 +204,6 @@ const styles = StyleSheet.create({
   buttonText: { color: theme.colors.accentDark, fontSize: 18, fontWeight: '700' },
   guestLink: { marginTop: theme.spacing(2.5), padding: theme.spacing(1) },
   guestLinkText: { color: '#d7e6dd', fontSize: 15, textDecorationLine: 'underline' },
+  privacyLink: { position: 'absolute', bottom: theme.spacing(2), padding: theme.spacing(1) },
+  privacyLinkText: { color: 'rgba(255,255,255,0.55)', fontSize: 12 },
 });

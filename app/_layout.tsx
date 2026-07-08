@@ -33,7 +33,8 @@ function AuthGate() {
     if (loading) return;
     const onLogin    = segments[0] === 'login';
     const onCallback = segments[0] === 'auth'; // /auth/callback - לא לנתב ממנו
-    if (!isAuthed && !onLogin && !onCallback) {
+    const onPrivacy  = segments[0] === 'privacy'; // ציבורי - נדרש לאימות Google OAuth
+    if (!isAuthed && !onLogin && !onCallback && !onPrivacy) {
       router.replace('/login');
     } else if (isAuthed && onLogin) {
       router.replace('/');
@@ -58,6 +59,7 @@ function AuthGate() {
       <Stack.Screen name="quiz/[id]" options={{ title: 'חידון' }} />
       <Stack.Screen name="profile" options={{ title: 'האזור האישי שלי' }} />
       <Stack.Screen name="about"         options={{ title: 'אודות שבילית' }} />
+      <Stack.Screen name="privacy"       options={{ title: 'מדיניות פרטיות' }} />
       <Stack.Screen name="admin"         options={{ title: 'פאנל ניהול', headerStyle: { backgroundColor: '#0a2a1e' } }} />
       <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
     </Stack>
