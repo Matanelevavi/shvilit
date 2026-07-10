@@ -27,9 +27,25 @@ if (html.includes('boot-splash')) {
 // עברית + RTL על תגית השורש
 html = html.replace('<html lang="en">', '<html lang="he" dir="rtl">');
 
+const SITE_URL = 'https://shvilit.shvilit-tours.workers.dev';
+const TITLE = 'שבילית - סיורי הדרכה חכמים';
+const DESCRIPTION = 'סיורי הדרכה חכמים בעברית, בכל מקום שתעצרו בו. מבוסס AI.';
+const OG_IMAGE = `${SITE_URL}/og-image.png`;
+
 const headExtra = `
-    <meta name="description" content="סיורי הדרכה חכמים בעברית, בכל מקום שתעצרו בו. מבוסס AI." />
+    <title>${TITLE}</title>
+    <meta name="description" content="${DESCRIPTION}" />
     <meta name="theme-color" content="#0f3d2e" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="${SITE_URL}" />
+    <meta property="og:title" content="${TITLE}" />
+    <meta property="og:description" content="${DESCRIPTION}" />
+    <meta property="og:image" content="${OG_IMAGE}" />
+    <meta property="og:locale" content="he_IL" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${TITLE}" />
+    <meta name="twitter:description" content="${DESCRIPTION}" />
+    <meta name="twitter:image" content="${OG_IMAGE}" />
     <style>
       html, body { background: #0f3d2e; }
       #boot-splash {
