@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { VideoPlayer } from '@/ui/VideoPlayer';
 import { getCachedPoi } from '@/state/store';
+import { getPoiProvider } from '@/services/factory';
 import { requestVideoTour, getVideoTour } from '@/services/video/videoTourApi';
 import { TOUR_STYLE_LABELS, type TourLengthMinutes, type TourStyle } from '@/domain/types';
 import {
@@ -117,7 +118,10 @@ export default function VideoTourScreen() {
       try {
         // שמירה כ-pending כדי שהמשתמש יוכל לחזור
         await addPendingVideo({ location, tourId: '', style, minutes, startedAt: Date.now() });
-        const first = await requestVideoTour(location, minutes, style);
+        // טקסט מלא מוויקיפדיה לעיגון התסריט (אותה שליפה כמו במסך המקום) -
+        // בלעדיו התסריט מומצא במקומות פחות מוכרים. כשל בשליפה לא חוסם.
+        const sourceText = poi ? await getPoiProvider().fetchArticleText(poi.id).catch(() => poi.summary) : '';
+        const first = await requestVideoTour(location, minutes, style, sourceText);
         if (!activeRef.current) return;
         // עדכון ה-tourId ב-pending
         await addPendingVideo({ location, tourId: first.id, style, minutes, startedAt: Date.now() });
