@@ -2,6 +2,29 @@
 
 Working log for the approved plan at `.claude/plans/floating-painting-eclipse.md`.
 
+## Status: all 8 stages complete
+
+| Commit | Stage |
+|---|---|
+| `829e92d` | 1. Supabase script/quiz/highlight cache + prompt v2 |
+| `bec2636` | 2. True RTL on web + Noto Sans Hebrew |
+| `04ecbbe`, `8ecba8e` | Source-grounding fix (found during manual QA on "רבבה" - see D5) |
+| `7ceffa9` | 3. Israel-filtered search, form suggestions, expandable summary, highlights |
+| `37ea4f9` | 4. Tour->guide rename, gender-neutral copy, new about page, separate leaderboard |
+| `c169740` | 5. PWA (manifest, service worker, icons) |
+| `cc6bbf4` | 6. Extended analytics (10 new admin metrics) |
+| `109c4bb` | 7. English-only README, stale facts fixed |
+| `0e266ad` | Cleanup: removed dead generate-tour Edge Function |
+
+Every row of the plan's feedback-coverage table was implemented and, where
+the feature was reachable from the browser, verified live (search
+filtering, RTL/font, highlights, expandable summary, about-page CTAs,
+profile tabs/leaderboard, PWA installability, analytics event writes).
+
+Left out of this round on purpose (per the approved plan): guest-first
+onboarding + local-save merging, native (Expo Go) RTL, a stronger Gemini
+model, and SQUAD.
+
 ## Deviations
 
 ### D1: Video cache stays on PERSIST_DIR (plan 1.6 adjusted)
