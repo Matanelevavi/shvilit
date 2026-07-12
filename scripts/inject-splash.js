@@ -46,6 +46,11 @@ const headExtra = `
     <meta name="twitter:title" content="${TITLE}" />
     <meta name="twitter:description" content="${DESCRIPTION}" />
     <meta name="twitter:image" content="${OG_IMAGE}" />
+    <!-- PWA: מאפשר התקנה כאפליקציה. אין הזרקה מקבילה בפיתוח מקומי (expo
+         start --web) - הסקריפט הזה רץ רק על dist/index.html אחרי export,
+         כך שרישום ה-service worker לעולם לא מתערב ב-HMR של הפיתוח. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <style>
       html, body { background: #0f3d2e; }
       #boot-splash {
@@ -88,8 +93,20 @@ const bodySplash = `<body>
       <div class="dots"><span></span><span></span><span></span></div>
     </div>`;
 
+// רישום ה-service worker: network-first על ה-HTML עצמו מבטיח שאחרי כל
+// deploy המשתמש מקבל את המעטפת העדכנית (ולא נתקע על גרסה ישנה שמצביעה
+// על bundle עם hash שכבר לא קיים) - ראה public/sw.js.
+const swRegister = `
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
+      }
+    </script>
+  </body>`;
+
 html = html.replace('</head>', headExtra);
 html = html.replace('<body>', bodySplash);
+html = html.replace('</body>', swRegister);
 
 fs.writeFileSync(htmlPath, html, 'utf8');
 console.log('inject-splash: מסך הטעינה הוזרק ל-dist/index.html בהצלחה.');

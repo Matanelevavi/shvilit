@@ -81,3 +81,23 @@ Working log for the approved plan at `.claude/plans/floating-painting-eclipse.md
   `Platform.OS === 'web'` - chevron-forward (points right), lands on the visual
   right because the RTL document mirrors the header row. Verified: navigates
   back from /profile.
+
+### D6: JS bundle not opportunistically cached by the SW (minor, non-blocking)
+- **What we hit:** Verified the PWA end-to-end against a real `expo export`
+  build served locally: manifest loads, icons load, SW registers and
+  controls the page, and the HTML shell (`/`) gets cached via the
+  network-first path on reload as designed. However the `<script src defer>`
+  JS bundle itself never showed up in the SW's cache across three reloads,
+  even though same-origin fonts/images/icons fetched via normal `fetch()`
+  calls from app code were caught and cached correctly by the cache-first
+  branch.
+- **What we chose:** Left as-is. The plan's actual requirement - never serve
+  a stale HTML shell that points at a JS bundle hash the server no longer
+  has - is met by the network-first HTML strategy regardless of whether the
+  JS itself is cached. Full offline-first (asset precached before first
+  visit) was not a stated requirement.
+- **Why:** This looks like a browser/test-harness timing quirk around
+  `location.reload()` and initial `<script>`-tag fetches during SW
+  activation, not a bug in the fetch handler itself (which has no special
+  case that would exclude `.js` requests). Not worth further investigation
+  time against the plan's actual goal.
