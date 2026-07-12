@@ -29,6 +29,22 @@ import {
   type SupabaseProfile,
 } from '@/state/supabaseProfile';
 import { getRank } from '@/state/gameState';
+import { getAnalyticsSummary, type AnalyticsSummary } from '@/state/analytics';
+
+const EVENT_LABELS: Record<string, string> = {
+  page_view: 'צפיות בדף',
+  login_google: 'התחברויות Google',
+  login_guest: 'כניסות כאורח',
+  search: 'חיפושים',
+  nearby_search: 'חיפוש "מה יש סביבי"',
+  poi_view: 'צפיות בנקודת עניין',
+  tour_generated: 'סיורי שמע שנוצרו',
+  video_requested: 'בקשות וידאו',
+  video_ready: 'סרטונים שהושלמו',
+  quiz_started: 'חידונים שהתחילו',
+  quiz_completed: 'חידונים שהושלמו',
+  audio_play: 'השמעות שמע',
+};
 
 function StatCard({ value, label, icon, color }: { value: string | number; label: string; icon: string; color: string }) {
   return (
@@ -68,6 +84,7 @@ export default function AdminScreen() {
   const [supabaseMode, setSupabaseMode] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
 
   // שמירת המסך: רק אדמין (לפי מייל Google) או מי שפתח מצב מפתח נכנס.
   // בלעדיה, כל מי שמנווט ישירות ל-/admin (למשל ב-URL בדפדפן) רואה את הפאנל.
@@ -87,10 +104,12 @@ export default function AdminScreen() {
 
   const load = useCallback(async () => {
     // הרשת (Supabase) והאחסון המקומי לא תלויים זה בזה - נטענים במקביל
-    const [supabaseProfiles, localData] = await Promise.all([
+    const [supabaseProfiles, localData, analyticsSummary] = await Promise.all([
       getAllProfiles(),
       getAllUsers(),
+      getAnalyticsSummary(),
     ]);
+    setAnalytics(analyticsSummary);
     if (supabaseProfiles.length > 0) {
       // מיזוג: פרופילים מהענן + כל המשתמשים המקומיים שלא קיימים בענן
       // (משתמשי אורח מקומיים ו-NPC), בלי כפילויות לפי id.
@@ -223,6 +242,28 @@ export default function AdminScreen() {
           </View>
         </View>
       </View>
+
+      {/* Visitor analytics */}
+      {analytics && (
+        <View style={styles.activityCard}>
+          <Text style={styles.activityTitle}>מבקרים (30 יום אחרונים)</Text>
+          <View style={styles.statsRow}>
+            <StatCard value={analytics.uniqueVisitors}    label="מבקרים ייחודיים" icon="eye-outline"        color="#1c6b4f" />
+            <StatCard value={analytics.activeVisitors24h} label="פעילים ב-24 שעות" icon="pulse-outline"      color="#22a06b" />
+            <StatCard value={analytics.pageViews}         label="צפיות בדף"       icon="document-text-outline" color="#6c63ff" />
+          </View>
+          {analytics.eventCounts.length > 0 && (
+            <View style={styles.eventList}>
+              {analytics.eventCounts.map((e) => (
+                <View key={e.type} style={styles.eventRow}>
+                  <Text style={styles.eventCount}>{e.count}</Text>
+                  <Text style={styles.eventLabel}>{EVENT_LABELS[e.type] ?? e.type}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+      )}
 
       {/* Users list */}
       <View style={styles.listHeader}>
@@ -399,6 +440,17 @@ const styles = StyleSheet.create({
   activityNum: { fontSize: 24, fontWeight: '800', color: theme.colors.primary },
   activityLabel: { fontSize: 11, color: theme.colors.textMuted },
   activityDivider: { width: 1, backgroundColor: theme.colors.border, marginVertical: 4 },
+  eventList: { marginTop: theme.spacing(1.5), gap: 6 },
+  eventRow: {
+    flexDirection: 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  eventLabel: { fontSize: 13, color: theme.colors.text },
+  eventCount: { fontSize: 13, fontWeight: '800', color: theme.colors.primary },
 
   listHeader: {
     flexDirection: 'row-reverse',

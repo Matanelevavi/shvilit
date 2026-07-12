@@ -18,6 +18,7 @@ import { useLocalProfile } from '@/auth/LocalProfile';
 import { config } from '@/config/env';
 import { theme } from '@/ui/theme';
 import { showAlert } from '@/ui/dialogs';
+import { trackEvent } from '@/state/analytics';
 
 function AnimatedLogo() {
   const scale = useRef(new Animated.Value(0)).current;
@@ -72,6 +73,7 @@ export default function LoginScreen() {
   const onGoogle = async () => {
     try {
       setBusy(true);
+      trackEvent('login_google');
       await signInWithGoogle();
     } catch (err) {
       showAlert('ההתחברות נכשלה', err instanceof Error ? err.message : 'שגיאה לא ידועה');
@@ -82,11 +84,13 @@ export default function LoginScreen() {
 
   const onEnter = async () => {
     if (!name.trim()) return;
+    trackEvent('login_guest', { named: true });
     await saveName(name.trim());
     router.replace('/');
   };
 
   const onGuest = async () => {
+    trackEvent('login_guest', { named: false });
     await saveName('אורח');
     router.replace('/');
   };

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -12,6 +12,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { getCachedPoi, cacheTour } from '@/state/store';
+import { trackEvent } from '@/state/analytics';
 import { getLlmProvider, getPoiProvider } from '@/services/factory';
 import { useAuth } from '@/auth/AuthProvider';
 import {
@@ -48,6 +49,10 @@ export default function PoiScreen() {
   const [busy, setBusy] = useState(false);
   const [busyVideo, setBusyVideo] = useState(false);
 
+  useEffect(() => {
+    if (poi) trackEvent('poi_view', { poiId: poi.id, title: poi.title });
+  }, [poi?.id]);
+
   if (!poi) {
     return (
       <View style={styles.center}>
@@ -68,6 +73,7 @@ export default function PoiScreen() {
         session?.access_token,
       );
       cacheTour(tour);
+      trackEvent('tour_generated', { poiId: poi.id, minutes, style });
       router.push(`/tour/${poi.id}`);
     } catch (err) {
       showAlert('יצירת הסיור נכשלה', err instanceof Error ? err.message : 'שגיאה');
@@ -77,10 +83,12 @@ export default function PoiScreen() {
   };
 
   const onVideo = () => {
+    trackEvent('video_requested', { poiId: poi.id, minutes, style });
     router.push(`/video/${poi.id}?minutes=${minutes}&style=${style}`);
   };
 
   const onQuiz = () => {
+    trackEvent('quiz_started', { poiId: poi.id });
     router.push(`/quiz/${poi.id}`);
   };
 

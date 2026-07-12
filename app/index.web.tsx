@@ -22,6 +22,7 @@ import type { Coordinate, Poi } from '@/domain/types';
 import { theme } from '@/ui/theme';
 import { showConfirm } from '@/ui/dialogs';
 import { wikiImage } from '@/ui/wikiImage';
+import { trackEvent } from '@/state/analytics';
 
 const DEFAULT_CENTER: Coordinate = { latitude: 31.7767, longitude: 35.2345 };
 const SUGGESTIONS = [
@@ -85,6 +86,7 @@ export default function MapScreenWeb() {
       setLoading(true);
       setNotice('');
       setSearched(true);
+      trackEvent('search', { term: term.trim() });
       const results = await getPoiProvider().searchByName(term.trim());
       cachePois(results);
       setPois(results);
@@ -127,6 +129,7 @@ export default function MapScreenWeb() {
       setLoading(true);
       setNotice('');
       setSearched(true);
+      trackEvent('nearby_search');
       const results = await getPoiProvider().search(center, 10000, 20);
       cachePois(results);
       setPois(results);

@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from '@/auth/AuthProvider';
 import { LocalProfileProvider, useLocalProfile } from '@/auth/LocalProfile';
 import { ErrorBoundary } from '@/ui/ErrorBoundary';
 import { theme } from '@/ui/theme';
+import { trackEvent } from '@/state/analytics';
 
 // אכיפת כיווניות עברית (RTL) לכל האפליקציה.
 I18nManager.allowRTL(true);
@@ -41,6 +42,13 @@ function AuthGate() {
     }
   }, [isAuthed, loading, segments]);
 
+  // מבקר בכל מסך (כולל אורחים לפני התחברות) - זה מה שנותן ספירת "מבקרים"
+  // אמיתית באדמין, לא רק ספירת משתמשים רשומים.
+  useEffect(() => {
+    if (loading) return;
+    trackEvent('page_view', undefined, '/' + segments.join('/'));
+  }, [loading, segments.join('/')]);
+
   return (
     <Stack
       screenOptions={{
@@ -67,7 +75,7 @@ function AuthGate() {
 }
 
 export default function RootLayout() {
-  // הסרת מסך הטעינה של ה-web (boot splash מ-+html.tsx) ברגע שהאפליקציה עולה.
+  // הסרת מסך הטעינה של ה-web (boot splash שהוזרק ב-scripts/inject-splash.js) ברגע שהאפליקציה עולה.
   useEffect(() => {
     if (Platform.OS !== 'web' || typeof document === 'undefined') return;
     const el = document.getElementById('boot-splash');

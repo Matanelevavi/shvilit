@@ -9,6 +9,7 @@ import {
   POINTS_PER_CORRECT, type Rank,
 } from '@/state/gameState';
 import { theme } from '@/ui/theme';
+import { trackEvent } from '@/state/analytics';
 
 function shuffleQuestion(q: QuizQuestion): QuizQuestion {
   const correct = q.options[q.answer];
@@ -75,6 +76,7 @@ export default function QuizScreen() {
       }
       setEarnedPoints(pts);
       await saveQuizResult({ location, score, total: questions.length, earnedPoints: pts, date: Date.now() });
+      trackEvent('quiz_completed', { location, score, total: questions.length, earnedPoints: pts });
       setFinished(true);
     }
   };
