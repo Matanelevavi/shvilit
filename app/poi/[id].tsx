@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getCachedPoi, cacheTour } from '@/state/store';
 import { trackEvent } from '@/state/analytics';
 import { getLlmProvider, getPoiProvider } from '@/services/factory';
+import { requestHighlights, type PlaceHighlight } from '@/services/highlights/highlightsApi';
 import { useAuth } from '@/auth/AuthProvider';
 import {
   TOUR_LENGTHS,
@@ -49,9 +50,38 @@ export default function PoiScreen() {
   const [busy, setBusy] = useState(false);
   const [busyVideo, setBusyVideo] = useState(false);
 
+  // תיאור מורחב: נטען רק בלחיצה על התקציר הקצר.
+  const [summaryExpanded, setSummaryExpanded] = useState(false);
+  const [extendedSummary, setExtendedSummary] = useState<string | null>(null);
+  const [extendedLoading, setExtendedLoading] = useState(false);
+
+  // נקודות מרכזיות: נטענות ברקע עם כניסה למסך, מוצגות רק אם הצליחו.
+  const [highlights, setHighlights] = useState<PlaceHighlight[]>([]);
+
   useEffect(() => {
     if (poi) trackEvent('poi_view', { poiId: poi.id, title: poi.title });
   }, [poi?.id]);
+
+  useEffect(() => {
+    if (!poi) return;
+    let active = true;
+    requestHighlights(poi.title, poi.summary).then((h) => { if (active) setHighlights(h); });
+    return () => { active = false; };
+  }, [poi?.id]);
+
+  const toggleSummary = async () => {
+    if (summaryExpanded) { setSummaryExpanded(false); return; }
+    setSummaryExpanded(true);
+    if (extendedSummary || extendedLoading || !poi) return;
+    setExtendedLoading(true);
+    try {
+      setExtendedSummary(await getPoiProvider().fetchExtendedSummary(poi.id));
+    } catch {
+      // נשארים עם התקציר הקצר - לא קריטי
+    } finally {
+      setExtendedLoading(false);
+    }
+  };
 
   if (!poi) {
     return (
@@ -116,12 +146,36 @@ export default function PoiScreen() {
         </LinearGradient>
       </View>
 
-      {/* Summary */}
+      {/* Summary - לחיצה מרחיבה לתיאור מלא יותר מוויקיפדיה */}
       {poi.summary ? (
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryText} numberOfLines={4}>{poi.summary}</Text>
-        </View>
+        <TouchableOpacity style={styles.summaryCard} onPress={toggleSummary} activeOpacity={0.85}>
+          <Text style={styles.summaryText} numberOfLines={summaryExpanded ? undefined : 4}>
+            {summaryExpanded && extendedSummary ? extendedSummary : poi.summary}
+          </Text>
+          <View style={styles.summaryToggle}>
+            {extendedLoading ? (
+              <ActivityIndicator size="small" color={theme.colors.primaryLight} />
+            ) : (
+              <>
+                <Text style={styles.summaryToggleText}>{summaryExpanded ? 'הצג פחות' : 'קרא עוד'}</Text>
+                <Ionicons name={summaryExpanded ? 'chevron-up' : 'chevron-down'} size={14} color={theme.colors.primaryLight} />
+              </>
+            )}
+          </View>
+        </TouchableOpacity>
       ) : null}
+
+      {/* Highlights - 4-5 נקודות מרכזיות למבט-על, לפני ההעמקה בתוכן המלא */}
+      {highlights.length > 0 && (
+        <View style={styles.highlightsCard}>
+          {highlights.map((h, i) => (
+            <View key={i} style={styles.highlightRow}>
+              <Text style={styles.highlightEmoji}>{h.emoji}</Text>
+              <Text style={styles.highlightText}>{h.text}</Text>
+            </View>
+          ))}
+        </View>
+      )}
 
       {/* Tour builder */}
       <View style={styles.builderCard}>
@@ -265,6 +319,23 @@ const styles = StyleSheet.create({
     ...theme.shadowSoft,
   },
   summaryText: { fontSize: 15, lineHeight: 24, color: theme.colors.text },
+  summaryToggle: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    marginTop: theme.spacing(1), alignSelf: 'flex-start',
+  },
+  summaryToggleText: { fontSize: 13, fontWeight: '700', color: theme.colors.primaryLight },
+
+  highlightsCard: {
+    backgroundColor: theme.colors.surfaceAlt,
+    marginHorizontal: theme.spacing(2),
+    marginTop: theme.spacing(1.5),
+    borderRadius: theme.radiusLg,
+    padding: theme.spacing(2),
+    gap: theme.spacing(1),
+  },
+  highlightRow: { flexDirection: 'row', alignItems: 'flex-start', gap: theme.spacing(1) },
+  highlightEmoji: { fontSize: 18, lineHeight: 22 },
+  highlightText: { flex: 1, fontSize: 14, lineHeight: 21, color: theme.colors.text },
 
   builderCard: {
     backgroundColor: theme.colors.surface,

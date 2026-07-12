@@ -63,6 +63,17 @@ function stripTrailingSections(text: string): string {
   return text.slice(0, cut).trim();
 }
 
+// תיבה גיאוגרפית רחבה של ישראל - סינון תוצאות חיפוש שאינן מקומות בפועל
+// (סדרות טלוויזיה, אלבומים, שבטי צופים וכו' שחולקים שם עם אתר אמיתי).
+const ISRAEL_BOUNDS = { minLat: 29.3, maxLat: 33.5, minLon: 34.0, maxLon: 36.0 };
+
+function isInIsrael(lat: number, lon: number): boolean {
+  return (
+    lat >= ISRAEL_BOUNDS.minLat && lat <= ISRAEL_BOUNDS.maxLat &&
+    lon >= ISRAEL_BOUNDS.minLon && lon <= ISRAEL_BOUNDS.maxLon
+  );
+}
+
 export class WikipediaPoiProvider implements PoiProvider {
   async search(center: Coordinate, radiusMeters = 10000, limit = 20): Promise<Poi[]> {
     // שלב 1: geosearch - קואורדינטה מדויקת לכל תוצאה.
@@ -130,6 +141,23 @@ export class WikipediaPoiProvider implements PoiProvider {
     return stripTrailingSections(page?.extract?.trim() ?? '');
   }
 
+  async fetchExtendedSummary(id: string): Promise<string> {
+    const params = new URLSearchParams({
+      action: 'query',
+      format: 'json',
+      origin: '*',
+      pageids: id,
+      prop: 'extracts',
+      explaintext: '1',
+      exchars: '1700', // ~200-300 מילה בעברית
+    });
+    const res = await fetch(`${WIKI_ENDPOINT}?${params.toString()}`, { headers: WIKI_HEADERS });
+    if (!res.ok) throw new Error(`Wikipedia API error: ${res.status}`);
+    const data = (await res.json()) as DetailResponse;
+    const page = data.query?.pages?.[id];
+    return stripTrailingSections(page?.extract?.trim() ?? '');
+  }
+
   async searchByName(query: string, limit = 8): Promise<Poi[]> {
     const params = new URLSearchParams({
       action: 'query',
@@ -151,7 +179,7 @@ export class WikipediaPoiProvider implements PoiProvider {
     const pages = data.query?.pages;
     if (!pages) return [];
 
-    return Object.values(pages)
+    const results = Object.values(pages)
       .sort((a, b) => (a.index ?? 0) - (b.index ?? 0))
       .map((page) => {
         const coord = page.coordinates?.[0];
@@ -166,5 +194,12 @@ export class WikipediaPoiProvider implements PoiProvider {
           sourceUrl: `${WIKI_PAGE_BASE}${page.pageid}`,
         };
       });
+
+    // סינון לתוצאות עם קואורדינטה בתוך ישראל - מפיל תוצאות "שם דומה" כמו
+    // מיני-סדרות, אלבומים או שבטי צופים שאינם מקומות. fallback עדין: אם
+    // הסינון הפיל הכל (למשל תקלת רשת בקבלת קואורדינטות), עדיף להציג את
+    // התוצאות המקוריות מאשר מסך ריק.
+    const geoFiltered = results.filter((r) => isInIsrael(r.coordinate.latitude, r.coordinate.longitude));
+    return geoFiltered.length > 0 ? geoFiltered : results;
   }
 }

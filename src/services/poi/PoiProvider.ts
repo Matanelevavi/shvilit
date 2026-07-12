@@ -20,6 +20,12 @@ export interface PoiProvider {
   fetchArticleText(id: string): Promise<string>;
 
   /**
+   * תקציר מורחב (כ-200-300 מילה) להצגה בלחיצה על התיאור הקצר -
+   * ביניים בין התקציר הראשוני (2-4 משפטים) לערך המלא.
+   */
+  fetchExtendedSummary(id: string): Promise<string>;
+
+  /**
    * חיפוש מקומות לפי שם חופשי (גם מקומות רחוקים), לא לפי מיקום.
    */
   searchByName(query: string, limit?: number): Promise<Poi[]>;

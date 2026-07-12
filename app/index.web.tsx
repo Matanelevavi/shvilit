@@ -207,11 +207,8 @@ export default function MapScreenWeb() {
             )}
           </TouchableOpacity>
         </View>
-      </LinearGradient>
 
-      <View style={styles.body}>
-
-        {/* Quick suggestions */}
+        {/* Quick suggestions - שייכות לטופס החיפוש, לכן בתוך הרקע הכהה */}
         <View style={styles.suggestionsRow}>
           {SUGGESTIONS.map(({ label, icon }) => (
             <TouchableOpacity
@@ -225,6 +222,9 @@ export default function MapScreenWeb() {
             </TouchableOpacity>
           ))}
         </View>
+      </LinearGradient>
+
+      <View style={styles.body}>
 
         {/* Nearby button */}
         <TouchableOpacity style={styles.nearbyBtn} onPress={searchNearby} activeOpacity={0.9}>
@@ -348,7 +348,7 @@ const styles = StyleSheet.create({
 
   body: { padding: theme.spacing(2), gap: theme.spacing(1.5) },
 
-  suggestionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing(0.875) },
+  suggestionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing(0.875), marginTop: theme.spacing(1.5) },
   suggChip: {
     flexDirection: 'row',
     alignItems: 'center',
