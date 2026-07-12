@@ -9,6 +9,10 @@ class GenerateTourRequest(BaseModel):
     location: str = Field(..., min_length=1, description="שם המקום, למשל 'רבבה'")
     duration_minutes: int = Field(..., ge=1, le=15)
     style: Style = "historical"
+    # טקסט מקור מוויקיפדיה (אופציונלי) - עיגון עובדתי לתסריט. בלעדיו
+    # Gemini עלול "להשלים" בביטחון מלא פרטים שלא היו, במיוחד במקומות
+    # קטנים/פחות מוכרים. ראה app/script_gen.py::_build_prompt.
+    source_text: str = ""
 
 
 class TourStatus(BaseModel):

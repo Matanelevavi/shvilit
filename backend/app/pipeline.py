@@ -15,13 +15,15 @@ from .video import assemble
 _RENDER_SEM = asyncio.Semaphore(2)
 
 
-async def run_pipeline(tour_id: str, location: str, duration_minutes: int, style: str) -> None:
+async def run_pipeline(
+    tour_id: str, location: str, duration_minutes: int, style: str, source_text: str = ""
+) -> None:
     work_dir = TEMP_DIR / tour_id
     work_dir.mkdir(parents=True, exist_ok=True)
     try:
         async with _RENDER_SEM:
-            # שלב 2: תסריט (Gemini)
-            script = await generate_script(location, duration_minutes, style)
+            # שלב 2: תסריט (Gemini), מעוגן בטקסט המקור אם יש
+            script = await generate_script(location, duration_minutes, style, source_text)
 
             audio_path = str(work_dir / "audio.mp3")
             srt_path = str(work_dir / "subs.srt")

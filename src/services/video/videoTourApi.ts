@@ -36,11 +36,14 @@ export async function requestVideoTour(
   location: string,
   minutes: TourLengthMinutes,
   style: TourStyle,
+  sourceText?: string,
 ): Promise<VideoTour> {
   const res = await fetchWithRetry(`${config.videoApiUrl}/generate-tour`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ location, duration_minutes: minutes, style }),
+    // sourceText מעגן את התסריט בעובדות אמיתיות מוויקיפדיה - בלעדיו
+    // Gemini "משלים" בביטחון פרטים שלא היו, במיוחד במקומות פחות מוכרים.
+    body: JSON.stringify({ location, duration_minutes: minutes, style, source_text: sourceText ?? '' }),
   });
   if (!res.ok) {
     throw new Error(`שרת הווידאו החזיר ${res.status}`);

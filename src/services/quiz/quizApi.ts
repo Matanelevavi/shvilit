@@ -21,11 +21,13 @@ async function fetchWithTimeout(url: string, options: RequestInit): Promise<Resp
   }
 }
 
-export async function requestQuiz(location: string): Promise<QuizQuestion[]> {
+export async function requestQuiz(location: string, sourceText?: string): Promise<QuizQuestion[]> {
   const options: RequestInit = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ location }),
+    // sourceText מעגן את השאלות בעובדות אמיתיות - בלעדיו החידון עלול
+    // "ללמד" עובדות מומצאות במקומות פחות מוכרים.
+    body: JSON.stringify({ location, source_text: sourceText ?? '' }),
   };
 
   let lastStatus = 0;

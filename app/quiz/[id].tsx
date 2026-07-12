@@ -3,6 +3,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getCachedPoi } from '@/state/store';
+import { getPoiProvider } from '@/services/factory';
 import { requestQuiz, type QuizQuestion } from '@/services/quiz/quizApi';
 import {
   addPoints, getRank, isQuizDone, saveQuizResult,
@@ -39,7 +40,12 @@ export default function QuizScreen() {
     if (!location) { setError('לא ניתן לזהות את המקום.'); setLoading(false); return; }
     let active = true;
 
-    Promise.all([requestQuiz(location), isQuizDone(location)])
+    // טקסט מלא מוויקיפדיה לעיגון השאלות (כשל בשליפה נופל לתקציר הקיים).
+    const sourceTextPromise = poi
+      ? getPoiProvider().fetchArticleText(poi.id).catch(() => poi.summary)
+      : Promise.resolve('');
+
+    Promise.all([sourceTextPromise.then((sourceText) => requestQuiz(location, sourceText)), isQuizDone(location)])
       .then(([qs, done]) => {
         if (!active) return;
         if (qs.length === 0) { setError('לא נוצרו שאלות. נסה מקום אחר.'); return; }

@@ -70,7 +70,9 @@ async def generate_tour(req: GenerateTourRequest, background: BackgroundTasks):
 
     tour_id = cache.create_processing(req.location, req.duration_minutes, req.style)
     # הרצה ברקע - הרינדור אורך זמן, אז מחזירים 'processing' והלקוח עושה polling.
-    background.add_task(run_pipeline, tour_id, req.location, req.duration_minutes, req.style)
+    background.add_task(
+        run_pipeline, tour_id, req.location, req.duration_minutes, req.style, req.source_text
+    )
 
     row = cache.get_by_id(tour_id)
     return _to_status(row)
@@ -155,6 +157,10 @@ async def generate_script_endpoint(payload: dict):
     location = (payload or {}).get("location", "").strip()
     minutes = int((payload or {}).get("minutes", 5))
     style = (payload or {}).get("style", "historical")
+    # טקסט המקור מוויקיפדיה (אם הלקוח שלף אותו) - קריטי לעיגון עובדתי.
+    # בלעדיו Gemini "משלים" בביטחון מלא תאריכים/ציטוטים/מבנים שלא היו,
+    # במיוחד במקומות קטנים/פחות מוכרים. ראה script_gen._build_prompt.
+    source_text = (payload or {}).get("source_text", "").strip()
     if not location:
         raise HTTPException(status_code=400, detail="missing location")
 
@@ -169,7 +175,7 @@ async def generate_script_endpoint(payload: dict):
         if cached:
             return {"script": cached, "cache_hit": True}
         try:
-            script = await generate_script(location, minutes, style)
+            script = await generate_script(location, minutes, style, source_text)
         except Exception as exc:  # noqa: BLE001
             raise HTTPException(status_code=502, detail=str(exc))
         await supacache.save_script(location, minutes, style, PROMPT_VERSION, script)
@@ -195,6 +201,7 @@ async def place_highlights_endpoint(payload: dict):
     כשל מחזיר רשימה ריקה (לא שגיאה) - המסך פשוט לא יציג את הקוביה.
     """
     location = (payload or {}).get("location", "").strip()
+    source_text = (payload or {}).get("source_text", "").strip()
     if not location:
         raise HTTPException(status_code=400, detail="missing location")
 
@@ -206,7 +213,7 @@ async def place_highlights_endpoint(payload: dict):
         cached = await supacache.get_highlights(location, PROMPT_VERSION)
         if cached:
             return {"highlights": cached, "cache_hit": True}
-        highlights = await generate_highlights(location)
+        highlights = await generate_highlights(location, source_text)
         if highlights:
             await supacache.save_highlights(location, PROMPT_VERSION, highlights)
     return {"highlights": highlights, "cache_hit": False}
@@ -228,6 +235,7 @@ async def _load_cached_quiz(location: str) -> list | None:
 async def generate_quiz_endpoint(payload: dict):
     location = (payload or {}).get("location", "").strip()
     count = int((payload or {}).get("count", 5))
+    source_text = (payload or {}).get("source_text", "").strip()
     if not location:
         raise HTTPException(status_code=400, detail="missing location")
 
@@ -241,7 +249,7 @@ async def generate_quiz_endpoint(payload: dict):
         if cached:
             return {"questions": cached}
         try:
-            questions = await generate_quiz(location, count)
+            questions = await generate_quiz(location, count, source_text)
         except Exception as exc:  # noqa: BLE001
             raise HTTPException(status_code=502, detail=str(exc))
         # כתיבה לשני הקאשים - כשל בכתיבה לא קריטי, השאלות כבר בזיכרון.

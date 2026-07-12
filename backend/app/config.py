@@ -36,7 +36,10 @@ SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "")
 # גרסת הפרומפט של תוכן שנשמר בקאש. כל שיפור מהותי בפרומפטים של
 # script_gen.py חייב להעלות את המספר - אחרת משתמשים ימשיכו לקבל
 # מהקאש תוכן שנוצר מהפרומפט הישן לנצח.
-PROMPT_VERSION = 2
+#
+# v3: עיגון בטקסט מקור מוויקיפדיה (source_text) - לפני זה Gemini המציא
+# תאריכים/ציטוטים/מבנים בביטחון מלא במקומות קטנים ופחות מוכרים.
+PROMPT_VERSION = 3
 
 _raw_base_url = os.getenv("PUBLIC_BASE_URL", "http://localhost:8000")
 # מנקה מקרה שהמשתמש הקליד "KEY = VALUE" בשדה הערך (במקום רק ה-URL).

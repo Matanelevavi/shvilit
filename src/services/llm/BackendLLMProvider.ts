@@ -20,7 +20,10 @@ export class BackendLLMProvider implements LLMProvider {
       const res = await fetch(`${config.videoApiUrl}/generate-script`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ location: poi.title, minutes, style }),
+        // poi.summary מכיל בשלב הזה את הערך המלא מוויקיפדיה (העמוד קורא
+        // ל-fetchArticleText לפני הקריאה הזו) - חובה לשלוח אותו כדי
+        // שהשרת יעגן את התסריט בעובדות אמיתיות ולא "ישלים" פרטים.
+        body: JSON.stringify({ location: poi.title, minutes, style, source_text: poi.summary }),
         signal: AbortSignal.timeout?.(150_000),
       });
       if (!res.ok) throw new Error(`script api ${res.status}`);
