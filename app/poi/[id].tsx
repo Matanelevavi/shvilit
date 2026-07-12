@@ -12,7 +12,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { getCachedPoi, cacheTour } from '@/state/store';
-import { trackEvent } from '@/state/analytics';
+import { trackEvent, regionFromCoordinate } from '@/state/analytics';
 import { getLlmProvider, getPoiProvider } from '@/services/factory';
 import { requestHighlights, type PlaceHighlight } from '@/services/highlights/highlightsApi';
 import { useAuth } from '@/auth/AuthProvider';
@@ -40,7 +40,7 @@ const LENGTH_META: Record<number, { label: string; words: string; icon: string }
 };
 
 export default function PoiScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, source } = useLocalSearchParams<{ id: string; source?: string }>();
   const router = useRouter();
   const { session } = useAuth();
   const poi = id ? getCachedPoi(id) : undefined;
@@ -59,7 +59,7 @@ export default function PoiScreen() {
   const [highlights, setHighlights] = useState<PlaceHighlight[]>([]);
 
   useEffect(() => {
-    if (poi) trackEvent('poi_view', { poiId: poi.id, title: poi.title });
+    if (poi) trackEvent('poi_view', { location: poi.title, source: source ?? 'other' });
   }, [poi?.id]);
 
   useEffect(() => {
@@ -103,7 +103,13 @@ export default function PoiScreen() {
         session?.access_token,
       );
       cacheTour(tour);
-      trackEvent('tour_generated', { poiId: poi.id, minutes, style });
+      trackEvent('tour_generated', {
+        location: poi.title,
+        minutes,
+        style,
+        region: regionFromCoordinate(poi.coordinate.latitude, poi.coordinate.longitude),
+        cache_hit: tour.cacheHit ?? false,
+      });
       router.push(`/tour/${poi.id}`);
     } catch (err) {
       showAlert('יצירת ההדרכה נכשלה', err instanceof Error ? err.message : 'שגיאה');
@@ -113,12 +119,12 @@ export default function PoiScreen() {
   };
 
   const onVideo = () => {
-    trackEvent('video_requested', { poiId: poi.id, minutes, style });
+    trackEvent('video_requested', { location: poi.title, minutes, style });
     router.push(`/video/${poi.id}?minutes=${minutes}&style=${style}`);
   };
 
   const onQuiz = () => {
-    trackEvent('quiz_started', { poiId: poi.id });
+    trackEvent('quiz_started', { location: poi.title });
     router.push(`/quiz/${poi.id}`);
   };
 

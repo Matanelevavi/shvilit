@@ -46,12 +46,32 @@ const EVENT_LABELS: Record<string, string> = {
   audio_play: 'השמעות שמע',
 };
 
+const STYLE_LABELS: Record<string, string> = {
+  historical: 'היסטורי',
+  mystery: 'מתח ומסתורין',
+  kids: 'לילדים',
+};
+
 function StatCard({ value, label, icon, color }: { value: string | number; label: string; icon: string; color: string }) {
   return (
     <View style={[styles.statCard, { borderTopColor: color }]}>
       <Ionicons name={icon as any} size={20} color={color} />
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
+    </View>
+  );
+}
+
+/** שורת בר אופקי - לפילוגים ומשפכים, בלי תלות בספריית גרפים. */
+function BarRow({ label, count, max }: { label: string; count: number; max: number }) {
+  const pct = Math.max(2, Math.round((count / max) * 100));
+  return (
+    <View style={styles.barRow}>
+      <Text style={styles.barRowLabel} numberOfLines={1}>{label}</Text>
+      <View style={styles.barTrack}>
+        <View style={[styles.barFill, { width: `${pct}%` }]} />
+      </View>
+      <Text style={styles.barRowCount}>{count}</Text>
     </View>
   );
 }
@@ -265,6 +285,122 @@ export default function AdminScreen() {
         </View>
       )}
 
+      {/* Product analytics - שלב 6: תובנות מעבר לספירות בסיסיות */}
+      {analytics && (
+        <>
+          {/* הדרכות למשתמש + אזורים בחודש */}
+          <View style={styles.activityCard}>
+            <Text style={styles.activityTitle}>הדרכות ואזורים למשתמש</Text>
+            <View style={styles.statsRow}>
+              <StatCard value={analytics.toursPerUser.average} label="הדרכות בממוצע" icon="bar-chart-outline" color="#1c6b4f" />
+              <StatCard value={analytics.toursPerUser.median} label="הדרכות (חציון)" icon="stats-chart-outline" color="#22a06b" />
+              <StatCard value={analytics.regionsPerUserMonth.average} label="אזורים בחודש (ממוצע)" icon="map-outline" color="#6c63ff" />
+            </View>
+            <View style={styles.barList}>
+              {analytics.toursPerUser.distribution.map((d) => (
+                <BarRow key={d.label} label={d.label} count={d.count} max={Math.max(1, ...analytics.toursPerUser.distribution.map((x) => x.count))} />
+              ))}
+            </View>
+          </View>
+
+          {/* מקומות פופולריים */}
+          {analytics.popularPlaces.length > 0 && (
+            <View style={styles.activityCard}>
+              <Text style={styles.activityTitle}>מקומות פופולריים</Text>
+              <View style={styles.eventList}>
+                {analytics.popularPlaces.map((p) => (
+                  <View key={p.location} style={styles.eventRow}>
+                    <Text style={styles.eventCount}>{p.generated} הדרכות · {p.viewed} צפיות</Text>
+                    <Text style={styles.eventLabel} numberOfLines={1}>{p.location}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* התפלגות סגנון ואורך */}
+          <View style={styles.activityCard}>
+            <Text style={styles.activityTitle}>סגנון ואורך מועדפים</Text>
+            <View style={styles.barList}>
+              {analytics.styleDistribution.map((d) => (
+                <BarRow key={d.label} label={STYLE_LABELS[d.label] ?? d.label} count={d.count} max={Math.max(1, ...analytics.styleDistribution.map((x) => x.count))} />
+              ))}
+            </View>
+            <View style={[styles.barList, { marginTop: theme.spacing(1) }]}>
+              {analytics.lengthDistribution.map((d) => (
+                <BarRow key={d.label} label={d.label} count={d.count} max={Math.max(1, ...analytics.lengthDistribution.map((x) => x.count))} />
+              ))}
+            </View>
+          </View>
+
+          {/* משפך המרה */}
+          <View style={styles.activityCard}>
+            <Text style={styles.activityTitle}>משפך המרה (משתמשים ייחודיים)</Text>
+            <View style={styles.barList}>
+              <BarRow label="חיפשו" count={analytics.funnel.search} max={Math.max(1, analytics.funnel.search)} />
+              <BarRow label="צפו במקום" count={analytics.funnel.poiView} max={Math.max(1, analytics.funnel.search)} />
+              <BarRow label="יצרו הדרכה" count={analytics.funnel.tourGenerated} max={Math.max(1, analytics.funnel.search)} />
+              <BarRow label="המשיכו (שמע/וידאו/חידון)" count={analytics.funnel.engaged} max={Math.max(1, analytics.funnel.search)} />
+            </View>
+          </View>
+
+          {/* חיפושים ללא תוצאות */}
+          {analytics.zeroResultSearches.length > 0 && (
+            <View style={styles.activityCard}>
+              <Text style={styles.activityTitle}>חיפושים ללא תוצאות</Text>
+              <View style={styles.eventList}>
+                {analytics.zeroResultSearches.map((q) => (
+                  <View key={q.query} style={styles.eventRow}>
+                    <Text style={styles.eventCount}>{q.count}×</Text>
+                    <Text style={styles.eventLabel} numberOfLines={1}>{q.query}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* חזרתיות, קאש ופלטפורמה */}
+          <View style={styles.activityCard}>
+            <Text style={styles.activityTitle}>חזרתיות, קאש ופלטפורמה</Text>
+            <View style={styles.statsRow}>
+              <StatCard value={analytics.retention.returnedAnotherDay} label="חזרו ביום נוסף" icon="repeat-outline" color="#1c6b4f" />
+              <StatCard value={analytics.retention.activeLast7Days} label="פעילים בשבוע האחרון" icon="calendar-outline" color="#22a06b" />
+              <StatCard
+                value={analytics.cacheHitRate === null ? '—' : `${analytics.cacheHitRate}%`}
+                label="הדרכות מהקאש"
+                icon="flash-outline"
+                color="#e8a33d"
+              />
+            </View>
+            <View style={[styles.barList, { marginTop: theme.spacing(1) }]}>
+              <BarRow label="Web" count={analytics.platformSplit.web} max={Math.max(1, analytics.platformSplit.web, analytics.platformSplit.native)} />
+              <BarRow label="Native" count={analytics.platformSplit.native} max={Math.max(1, analytics.platformSplit.web, analytics.platformSplit.native)} />
+            </View>
+          </View>
+
+          {/* פעילות יומית */}
+          {analytics.dailyActivity.length > 0 && (
+            <View style={styles.activityCard}>
+              <Text style={styles.activityTitle}>פעילות יומית (30 יום)</Text>
+              <View style={styles.dailyChart}>
+                {analytics.dailyActivity.map((d) => {
+                  const max = Math.max(1, ...analytics.dailyActivity.map((x) => x.count));
+                  return (
+                    <View key={d.date} style={styles.dailyBarWrap}>
+                      <View style={[styles.dailyBar, { height: `${Math.max(4, Math.round((d.count / max) * 100))}%` }]} />
+                    </View>
+                  );
+                })}
+              </View>
+              <View style={styles.dailyChartLabels}>
+                <Text style={styles.dailyChartLabel}>{analytics.dailyActivity[0]?.date}</Text>
+                <Text style={styles.dailyChartLabel}>{analytics.dailyActivity[analytics.dailyActivity.length - 1]?.date}</Text>
+              </View>
+            </View>
+          )}
+        </>
+      )}
+
       {/* Users list */}
       <View style={styles.listHeader}>
         <Text style={styles.listTitle}>כל המשתמשים</Text>
@@ -449,8 +585,23 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
   },
-  eventLabel: { fontSize: 13, color: theme.colors.text },
+  eventLabel: { fontSize: 13, color: theme.colors.text, flex: 1 },
   eventCount: { fontSize: 13, fontWeight: '800', color: theme.colors.primary },
+
+  barList: { gap: theme.spacing(1) },
+  barRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing(1) },
+  barRowLabel: { width: 110, fontSize: 12, color: theme.colors.text },
+  barTrack: { flex: 1, height: 8, backgroundColor: theme.colors.surfaceAlt, borderRadius: 4, overflow: 'hidden' },
+  barFill: { height: '100%', backgroundColor: theme.colors.primaryLight, borderRadius: 4 },
+  barRowCount: { width: 28, fontSize: 12, fontWeight: '700', color: theme.colors.primary, textAlign: 'center' },
+
+  dailyChart: {
+    flexDirection: 'row', alignItems: 'flex-end', height: 64, gap: 2,
+  },
+  dailyBarWrap: { flex: 1, height: '100%', justifyContent: 'flex-end' },
+  dailyBar: { backgroundColor: theme.colors.primaryLight, borderRadius: 2, minHeight: 3 },
+  dailyChartLabels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: theme.spacing(0.5) },
+  dailyChartLabel: { fontSize: 10, color: theme.colors.textMuted },
 
   listHeader: {
     flexDirection: 'row',

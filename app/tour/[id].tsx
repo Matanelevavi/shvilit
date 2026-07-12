@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getCachedTour, getCachedPoi } from '@/state/store';
 import { getTtsProvider } from '@/services/factory';
 import { isTourSaved, saveTour, removeSavedTour } from '@/state/savedTours';
+import { trackEvent } from '@/state/analytics';
 import { TOUR_STYLE_LABELS } from '@/domain/types';
 import { theme } from '@/ui/theme';
 import { wikiImage } from '@/ui/wikiImage';
@@ -53,6 +54,7 @@ export default function TourScreen() {
         savedAt: Date.now(),
       });
       setSaved(true);
+      trackEvent('tour_saved', { location: tour.title });
     }
   };
 
@@ -120,7 +122,9 @@ export default function TourScreen() {
   };
 
   const onMainPress = () => {
-    if (state === 'idle') return startSpeak(rate);
+    // רק בפעם הראשונה שההשמעה מתחילה (לא בכל שינוי מהירות/חידוש) -
+    // כדי שהמדד ישקף כמה הדרכות באמת הושמעו, לא כמה פעמים נלחץ הכפתור.
+    if (state === 'idle') { trackEvent('audio_play', { location: tour.title }); return startSpeak(rate); }
     if (state === 'loading') return stop();
     if (state === 'playing') return tts.supportsPause ? pause() : stop();
     if (state === 'paused') return resume();

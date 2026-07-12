@@ -27,7 +27,7 @@ export class BackendLLMProvider implements LLMProvider {
         signal: AbortSignal.timeout?.(150_000),
       });
       if (!res.ok) throw new Error(`script api ${res.status}`);
-      const data = (await res.json()) as { script?: string };
+      const data = (await res.json()) as { script?: string; cache_hit?: boolean };
       const text = data.script?.trim();
       if (!text) throw new Error('empty script');
 
@@ -40,6 +40,7 @@ export class BackendLLMProvider implements LLMProvider {
         wordCount: countWords(text),
         source: 'gemini',
         attribution: 'נכתב על ידי Gemini',
+        cacheHit: data.cache_hit,
       };
     } catch {
       return this.mock.generateTourScript(request);

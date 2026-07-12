@@ -51,6 +51,8 @@ export interface TourScript {
   source: TourSource;
   /** ייחוס מקור להצגה למשתמש (שקיפות, לא להציג דיוק שלא קיים). */
   attribution: string;
+  /** האם הוגש מהקאש הקבוע ב-Supabase (לשימוש באנליטיקס: חיסכון בטוקנים). */
+  cacheHit?: boolean;
 }
 
 /** תווית עברית לכל סגנון, לשימוש ב-UI. */

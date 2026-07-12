@@ -22,7 +22,7 @@ import type { Coordinate, Poi } from '@/domain/types';
 import { theme } from '@/ui/theme';
 import { showConfirm } from '@/ui/dialogs';
 import { wikiImage } from '@/ui/wikiImage';
-import { trackEvent } from '@/state/analytics';
+import { trackEvent, regionFromCoordinate } from '@/state/analytics';
 
 const DEFAULT_CENTER: Coordinate = { latitude: 31.7767, longitude: 35.2345 };
 const SUGGESTIONS = [
@@ -51,6 +51,7 @@ export default function MapScreenWeb() {
   const [notice, setNotice] = useState('');
   const [query, setQuery] = useState('');
   const [searched, setSearched] = useState(false);
+  const [resultsSource, setResultsSource] = useState<'search' | 'nearby'>('search');
   const [points, setPoints] = useState(0);
 
   useFocusEffect(useCallback(() => {
@@ -86,10 +87,13 @@ export default function MapScreenWeb() {
       setLoading(true);
       setNotice('');
       setSearched(true);
-      trackEvent('search', { term: term.trim() });
+      setResultsSource('search');
       const results = await getPoiProvider().searchByName(term.trim());
       cachePois(results);
       setPois(results);
+      // נשלח אחרי קבלת התוצאות - results_count הוא בדיוק מה שמזהה חיפושים
+      // "יבשים" (0 תוצאות), זהב מוצרי למה אנשים מחפשים ולא מוצאים.
+      trackEvent('search', { query: term.trim(), results_count: results.length });
       if (results.length === 0) setNotice('לא נמצאו תוצאות. אפשר לנסות שם אחר.');
     } catch (err) {
       setNotice(`שגיאה: ${err instanceof Error ? err.message : 'שגיאה'}`);
@@ -129,7 +133,8 @@ export default function MapScreenWeb() {
       setLoading(true);
       setNotice('');
       setSearched(true);
-      trackEvent('nearby_search');
+      setResultsSource('nearby');
+      trackEvent('nearby_search', { region: regionFromCoordinate(center.latitude, center.longitude) });
       const results = await getPoiProvider().search(center, 10000, 20);
       cachePois(results);
       setPois(results);
@@ -254,7 +259,7 @@ export default function MapScreenWeb() {
                 key={poi.id}
                 style={styles.card}
                 activeOpacity={0.88}
-                onPress={() => router.push(`/poi/${poi.id}`)}
+                onPress={() => router.push(`/poi/${poi.id}?source=${resultsSource}`)}
               >
                 {poi.thumbnailUrl ? (
                   <Image source={wikiImage(poi.thumbnailUrl)} style={styles.thumb} />
