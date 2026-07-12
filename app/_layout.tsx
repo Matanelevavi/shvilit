@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { I18nManager, LogBox, Platform } from 'react-native';
+import { I18nManager, LogBox, Platform, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -12,6 +13,31 @@ import { trackEvent } from '@/state/analytics';
 // אכיפת כיווניות עברית (RTL) לכל האפליקציה.
 I18nManager.allowRTL(true);
 I18nManager.forceRTL(true);
+
+// web: כיווניות RTL אמיתית + פונט אחיד (Noto Sans Hebrew).
+// ב-production זה קורה גם ב-scripts/inject-splash.js, אבל בפיתוח מקומי
+// (expo start --web) אין הזרקה - ההגדרה כאן משווה את שתי הסביבות.
+// הערה על הפונט: Ionicons נשאר ברשימת ה-fallback בכוונה - תווי האייקונים
+// (Private Use Area) לא קיימים ב-Noto ולכן נופלים אליו, וכך כלל גורף אחד
+// לא שובר את האייקונים של @expo/vector-icons.
+if (Platform.OS === 'web' && typeof document !== 'undefined') {
+  document.documentElement.dir = 'rtl';
+  document.documentElement.lang = 'he';
+  const fontCss = document.createElement('style');
+  fontCss.textContent = [
+    ['400Regular', 400], ['600SemiBold', 600], ['700Bold', 700],
+    ['800ExtraBold', 800], ['900Black', 900],
+  ]
+    .map(
+      ([name, weight]) =>
+        `@font-face{font-family:'Noto Sans Hebrew';src:url('/fonts/NotoSansHebrew_${name}.ttf') format('truetype');font-weight:${weight};font-display:swap;}`,
+    )
+    .join('\n')
+    .concat(
+      `\n#root, #root * { font-family: 'Noto Sans Hebrew', Ionicons, system-ui, -apple-system, 'Segoe UI', sans-serif; }`,
+    );
+  document.head.appendChild(fontCss);
+}
 
 // הסתרת אזהרות פיתוח לא-מזיקות שמקפיצות תיבות צהובות.
 LogBox.ignoreLogs([
@@ -56,6 +82,16 @@ function AuthGate() {
         headerTintColor: '#fff',
         headerTitleStyle: { fontWeight: '700' },
         contentStyle: { backgroundColor: theme.colors.background },
+        // web: חץ "חזור" שמצביע ימינה, כמקובל בעברית (ברירת המחדל מצביעה
+        // שמאלה כמו באנגלית). ב-native ה-header הנייטיבי מתהפך לבד עם RTL.
+        ...(Platform.OS === 'web' && {
+          headerLeft: ({ canGoBack }: { canGoBack?: boolean }) =>
+            canGoBack ? (
+              <TouchableOpacity onPress={() => router.back()} hitSlop={12} style={{ padding: 4 }}>
+                <Ionicons name="chevron-forward" size={26} color="#fff" />
+              </TouchableOpacity>
+            ) : null,
+        }),
       }}
     >
       <Stack.Screen name="login" options={{ headerShown: false }} />

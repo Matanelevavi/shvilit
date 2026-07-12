@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+﻿import { useCallback, useState } from 'react';
 import {
   RefreshControl,
   ScrollView,
@@ -378,10 +378,10 @@ const styles = StyleSheet.create({
   content:   { paddingBottom: theme.spacing(5) },
 
   header: { padding: theme.spacing(2.5), paddingTop: theme.spacing(3) },
-  headerTop: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between' },
+  headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   headerTitle: { fontSize: 22, fontWeight: '800', color: '#fff' },
   adminBadge: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     backgroundColor: 'rgba(232,163,61,0.18)',
@@ -392,9 +392,9 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(232,163,61,0.4)',
   },
   adminBadgeText: { fontSize: 11, fontWeight: '800', color: '#e8a33d', letterSpacing: 1 },
-  headerSub: { fontSize: 13, color: '#9bbfaf', textAlign: 'right', marginTop: theme.spacing(0.75) },
+  headerSub: { fontSize: 13, color: '#9bbfaf', marginTop: theme.spacing(0.75) },
   modeBadge: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     marginTop: theme.spacing(1),
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
   modeBadgeText:  { fontSize: 10, fontWeight: '600' },
 
   statsRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     padding: theme.spacing(1.5),
     gap: theme.spacing(1),
   },
@@ -434,15 +434,15 @@ const styles = StyleSheet.create({
     padding: theme.spacing(2),
     ...theme.shadowSoft,
   },
-  activityTitle: { fontSize: 13, fontWeight: '700', color: theme.colors.textMuted, textAlign: 'right', marginBottom: theme.spacing(1.5) },
-  activityRow: { flexDirection: 'row-reverse', justifyContent: 'space-around' },
+  activityTitle: { fontSize: 13, fontWeight: '700', color: theme.colors.textMuted, marginBottom: theme.spacing(1.5) },
+  activityRow: { flexDirection: 'row', justifyContent: 'space-around' },
   activityItem: { alignItems: 'center', gap: 4 },
   activityNum: { fontSize: 24, fontWeight: '800', color: theme.colors.primary },
   activityLabel: { fontSize: 11, color: theme.colors.textMuted },
   activityDivider: { width: 1, backgroundColor: theme.colors.border, marginVertical: 4 },
   eventList: { marginTop: theme.spacing(1.5), gap: 6 },
   eventRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 4,
@@ -453,7 +453,7 @@ const styles = StyleSheet.create({
   eventCount: { fontSize: 13, fontWeight: '800', color: theme.colors.primary },
 
   listHeader: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: theme.spacing(2),
@@ -467,7 +467,7 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing(1),
     borderRadius: theme.radiusLg,
     padding: theme.spacing(1.75),
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing(1.25),
     flexWrap: 'wrap',
@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing(4),
   },
   userInfo: { flex: 1 },
-  userNameRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: theme.spacing(0.75) },
+  userNameRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing(0.75) },
   userName: { fontSize: 15, fontWeight: '700', color: theme.colors.text },
   onlineDot: {
     width: 8,
@@ -499,8 +499,8 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: '#22a06b',
   },
-  userEmail: { fontSize: 11, color: theme.colors.textMuted, textAlign: 'right', marginTop: 1 },
-  userTier:  { fontSize: 12, color: theme.colors.textMuted, textAlign: 'right', marginTop: 1 },
+  userEmail: { fontSize: 11, color: theme.colors.textMuted, marginTop: 1 },
+  userTier:  { fontSize: 12, color: theme.colors.textMuted, marginTop: 1 },
   adminUserBadge: {
     backgroundColor: 'rgba(232,163,61,0.15)',
     borderRadius: 999,
@@ -522,7 +522,7 @@ const styles = StyleSheet.create({
     paddingTop: theme.spacing(1.5),
   },
   expandedStats: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     justifyContent: 'space-around',
     marginBottom: theme.spacing(1.5),
   },
@@ -530,12 +530,12 @@ const styles = StyleSheet.create({
   expandedNum: { fontSize: 15, fontWeight: '700', color: theme.colors.text },
   expandedLabel: { fontSize: 10, color: theme.colors.textMuted },
   expandedActions: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     gap: theme.spacing(1),
   },
   actionBtnWarn: {
     flex: 1,
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
@@ -548,7 +548,7 @@ const styles = StyleSheet.create({
   actionBtnWarnText: { fontSize: 13, fontWeight: '700', color: '#b45309' },
   actionBtnDanger: {
     flex: 1,
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+﻿import { useCallback, useState } from 'react';
 import {
   Image,
   ScrollView,
@@ -58,9 +58,10 @@ function formatDate(ts: number) {
 
 type Tab = 'quiz' | 'tours' | 'videos' | 'board';
 
+// הסדר קובע את התצוגה מימין לשמאל: שלושת סוגי התוכן שיוצרים לקראת טיול.
 const TABS: { key: Tab; icon: string; label: string }[] = [
-  { key: 'quiz',   icon: 'help-circle-outline', label: 'חידונים' },
   { key: 'tours',  icon: 'headset-outline',      label: 'סיורים' },
+  { key: 'quiz',   icon: 'help-circle-outline', label: 'חידונים' },
   { key: 'videos', icon: 'videocam-outline',     label: 'סרטונים' },
   { key: 'board',  icon: 'trophy-outline',        label: 'לוח' },
 ];
@@ -411,12 +412,12 @@ const styles = StyleSheet.create({
 
   // ─── Hero
   hero: { backgroundColor: theme.colors.primary, padding: theme.spacing(2.5), paddingBottom: theme.spacing(2) },
-  heroRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: theme.spacing(1.5) },
+  heroRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing(1.5) },
   rankEmoji: { fontSize: 42 },
   heroCenter: { flex: 1 },
-  heroName:  { color: '#fff', fontSize: 20, fontWeight: '800', textAlign: 'right' },
-  heroEmail: { color: 'rgba(255,255,255,0.6)', fontSize: 11, textAlign: 'right', marginTop: 1 },
-  heroRank:  { color: 'rgba(255,255,255,0.75)', fontSize: 14, textAlign: 'right' },
+  heroName:  { color: '#fff', fontSize: 20, fontWeight: '800' },
+  heroEmail: { color: 'rgba(255,255,255,0.6)', fontSize: 11, marginTop: 1 },
+  heroRank:  { color: 'rgba(255,255,255,0.75)', fontSize: 14 },
   pointsBadge: { alignItems: 'center', backgroundColor: theme.colors.accent, borderRadius: 14, paddingVertical: 6, paddingHorizontal: 14 },
   pointsNum: { fontSize: 24, fontWeight: '900', color: theme.colors.accentDark },
   pointsLabel: { fontSize: 10, color: theme.colors.accentDark, fontWeight: '600' },
@@ -424,23 +425,23 @@ const styles = StyleSheet.create({
   rankBarWrap: { marginTop: theme.spacing(1.5) },
   rankBarTrack: { height: 6, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 3, overflow: 'hidden' },
   rankBarFill: { height: '100%', backgroundColor: theme.colors.accent, borderRadius: 3 },
-  rankBarLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 4, textAlign: 'right' },
+  rankBarLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 4 },
 
-  tierRow: { flexDirection: 'row-reverse', marginTop: theme.spacing(1.5), gap: 4 },
+  tierRow: { flexDirection: 'row', marginTop: theme.spacing(1.5), gap: 4 },
   tierItem: { flex: 1, alignItems: 'center', opacity: 0.45 },
   tierItemActive: { opacity: 1 },
   tierEmoji: { fontSize: 14 },
   tierName: { fontSize: 9, color: 'rgba(255,255,255,0.85)', textAlign: 'center', marginTop: 1 },
   tierMin: { fontSize: 9, color: 'rgba(255,255,255,0.55)', textAlign: 'center' },
 
-  statsRow: { flexDirection: 'row-reverse', marginTop: theme.spacing(2), backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: theme.radius, padding: theme.spacing(1.5) },
+  statsRow: { flexDirection: 'row', marginTop: theme.spacing(2), backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: theme.radius, padding: theme.spacing(1.5) },
   statItem: { flex: 1, alignItems: 'center' },
   statNum: { fontSize: 22, fontWeight: '900', color: '#fff' },
   statLabel: { fontSize: 11, color: 'rgba(255,255,255,0.7)' },
   statDivider: { width: 1, backgroundColor: 'rgba(255,255,255,0.2)', marginVertical: 4 },
 
   // ─── Tabs
-  tabs: { flexDirection: 'row-reverse', backgroundColor: theme.colors.surface, borderBottomWidth: 1, borderBottomColor: theme.colors.border },
+  tabs: { flexDirection: 'row', backgroundColor: theme.colors.surface, borderBottomWidth: 1, borderBottomColor: theme.colors.border },
   tab: { flex: 1, flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, paddingVertical: theme.spacing(1.25) },
   tabActive: { borderBottomWidth: 2.5, borderBottomColor: theme.colors.primary },
   tabText: { fontSize: 11, color: theme.colors.textMuted, fontWeight: '600' },
@@ -457,11 +458,11 @@ const styles = StyleSheet.create({
   historyCard: {
     backgroundColor: theme.colors.surface, borderRadius: theme.radius,
     padding: theme.spacing(1.5), gap: theme.spacing(1), ...theme.shadowSoft,
-    flexDirection: 'row-reverse', alignItems: 'center',
+    flexDirection: 'row', alignItems: 'center',
   },
   historyLeft: { flex: 1 },
-  historyLoc: { fontSize: 15, fontWeight: '700', color: theme.colors.text, textAlign: 'right' },
-  historyDate: { fontSize: 12, color: theme.colors.textMuted, textAlign: 'right' },
+  historyLoc: { fontSize: 15, fontWeight: '700', color: theme.colors.text },
+  historyDate: { fontSize: 12, color: theme.colors.textMuted },
   historyRight: { alignItems: 'center', minWidth: 52 },
   historyScore: { fontSize: 18, fontWeight: '900', color: theme.colors.primary },
   historyPts: { fontSize: 11, color: theme.colors.primaryLight, fontWeight: '700' },
@@ -470,29 +471,29 @@ const styles = StyleSheet.create({
 
   // ─── Item card (tours + videos)
   itemCard: {
-    flexDirection: 'row-reverse', alignItems: 'center', gap: theme.spacing(1),
+    flexDirection: 'row', alignItems: 'center', gap: theme.spacing(1),
     backgroundColor: theme.colors.surface, borderRadius: theme.radiusLg,
     padding: theme.spacing(1.25), ...theme.shadowSoft,
   },
-  itemCardMain: { flex: 1, flexDirection: 'row-reverse', alignItems: 'center', gap: theme.spacing(1.25) },
+  itemCardMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: theme.spacing(1.25) },
   thumb: { width: 60, height: 60, borderRadius: theme.radius },
   thumbPlaceholder: { backgroundColor: theme.colors.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
   thumbVideo: { backgroundColor: theme.colors.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
   itemCardBody: { flex: 1 },
-  itemCardTitle: { fontSize: 15, fontWeight: '700', color: theme.colors.text, textAlign: 'right' },
-  itemCardMeta: { fontSize: 12, color: theme.colors.textMuted, textAlign: 'right', marginTop: 2 },
+  itemCardTitle: { fontSize: 15, fontWeight: '700', color: theme.colors.text },
+  itemCardMeta: { fontSize: 12, color: theme.colors.textMuted, marginTop: 2 },
 
   // ─── Leaderboard
-  boardNote: { fontSize: 11, color: theme.colors.textMuted, textAlign: 'right', marginBottom: theme.spacing(0.5) },
+  boardNote: { fontSize: 11, color: theme.colors.textMuted, marginBottom: theme.spacing(0.5) },
   boardRow: {
-    flexDirection: 'row-reverse', alignItems: 'center', paddingVertical: theme.spacing(1.25),
+    flexDirection: 'row', alignItems: 'center', paddingVertical: theme.spacing(1.25),
     paddingHorizontal: theme.spacing(1.5), borderRadius: theme.radius,
     backgroundColor: theme.colors.surface, gap: theme.spacing(1), ...theme.shadowSoft,
   },
   boardRowMe: { backgroundColor: theme.colors.surfaceAlt, borderWidth: 1.5, borderColor: theme.colors.primaryLight },
   boardRank: { fontSize: 18, width: 36, textAlign: 'center' },
   boardRankTop: { fontSize: 22 },
-  boardName: { flex: 1, fontSize: 15, fontWeight: '600', color: theme.colors.text, textAlign: 'right' },
+  boardName: { flex: 1, fontSize: 15, fontWeight: '600', color: theme.colors.text },
   boardNameMe: { fontWeight: '800', color: theme.colors.primary },
   boardPoints: { fontSize: 15, fontWeight: '700', color: theme.colors.textMuted },
   boardPointsMe: { color: theme.colors.primary, fontWeight: '900' },
@@ -508,7 +509,7 @@ const styles = StyleSheet.create({
     ...theme.shadowSoft,
   },
   menuRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: theme.spacing(1.75),
     paddingHorizontal: theme.spacing(2),
@@ -521,7 +522,7 @@ const styles = StyleSheet.create({
     width: 36, height: 36, borderRadius: 10,
     alignItems: 'center', justifyContent: 'center',
   },
-  menuLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: theme.colors.text, textAlign: 'right' },
+  menuLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: theme.colors.text },
   adminPill: {
     backgroundColor: '#fef3c7',
     borderRadius: 999,

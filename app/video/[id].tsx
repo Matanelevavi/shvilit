@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -222,12 +222,12 @@ const styles = StyleSheet.create({
     flex: 1, backgroundColor: theme.colors.background, alignItems: 'center',
     justifyContent: 'center', padding: theme.spacing(3), gap: theme.spacing(1.5),
   },
-  title: { fontSize: 24, fontWeight: '800', color: theme.colors.text, textAlign: 'right' },
-  meta: { fontSize: 14, color: theme.colors.textMuted, textAlign: 'right', marginBottom: theme.spacing(1.5) },
+  title: { fontSize: 24, fontWeight: '800', color: theme.colors.text },
+  meta: { fontSize: 14, color: theme.colors.textMuted, marginBottom: theme.spacing(1.5) },
   video: { width: '100%', aspectRatio: 16 / 9, backgroundColor: '#000', borderRadius: theme.radiusLg, overflow: 'hidden' },
-  actionsRow: { flexDirection: 'row-reverse', gap: theme.spacing(1), marginTop: theme.spacing(1.5) },
+  actionsRow: { flexDirection: 'row', gap: theme.spacing(1), marginTop: theme.spacing(1.5) },
   saveBtn: {
-    flex: 1, flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center',
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: theme.spacing(0.75), paddingVertical: theme.spacing(1.5),
     borderRadius: theme.radiusLg, borderWidth: 1.5, borderColor: theme.colors.primaryLight,
     backgroundColor: theme.colors.surface,
@@ -235,22 +235,22 @@ const styles = StyleSheet.create({
   saveBtnDone: { backgroundColor: theme.colors.surfaceAlt, borderColor: theme.colors.primaryLight },
   saveBtnText: { color: theme.colors.primary, fontWeight: '700', fontSize: 15 },
   profileBtn: {
-    flexDirection: 'row-reverse', alignItems: 'center', gap: theme.spacing(0.5),
+    flexDirection: 'row', alignItems: 'center', gap: theme.spacing(0.5),
     paddingVertical: theme.spacing(1.5), paddingHorizontal: theme.spacing(2),
     borderRadius: theme.radiusLg, backgroundColor: theme.colors.surface,
     borderWidth: 1, borderColor: theme.colors.border,
   },
   profileBtnText: { color: theme.colors.primaryLight, fontWeight: '600', fontSize: 14 },
-  attr: { fontSize: 12, color: theme.colors.textMuted, textAlign: 'right', marginTop: theme.spacing(1) },
+  attr: { fontSize: 12, color: theme.colors.textMuted, marginTop: theme.spacing(1) },
   progressTitle: { fontSize: 18, fontWeight: '700', color: theme.colors.primary, textAlign: 'center' },
   progressNote: { fontSize: 15, color: theme.colors.text, textAlign: 'center', fontWeight: '600' },
   progressHint: { fontSize: 13, color: theme.colors.textMuted, textAlign: 'center', lineHeight: 20 },
   exitHint: {
-    flexDirection: 'row-reverse', alignItems: 'center', gap: theme.spacing(0.75),
+    flexDirection: 'row', alignItems: 'center', gap: theme.spacing(0.75),
     backgroundColor: theme.colors.surfaceAlt, borderRadius: theme.radius,
     padding: theme.spacing(1.5), marginTop: theme.spacing(1),
   },
-  exitHintText: { flex: 1, fontSize: 13, color: theme.colors.textMuted, textAlign: 'right', lineHeight: 18 },
+  exitHintText: { flex: 1, fontSize: 13, color: theme.colors.textMuted, lineHeight: 18 },
   errorText: { fontSize: 16, color: theme.colors.text, textAlign: 'center', lineHeight: 24 },
   retryBtn: { backgroundColor: theme.colors.accent, paddingVertical: theme.spacing(1.5), paddingHorizontal: theme.spacing(4), borderRadius: theme.radiusLg, ...theme.shadow },
   retryText: { color: theme.colors.accentDark, fontWeight: '700', fontSize: 16 },

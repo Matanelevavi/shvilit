@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+﻿import { useCallback, useRef, useState } from 'react';
 import {
   Image,
   Linking,
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
     ...theme.shadow,
   },
   creatorGrad: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     padding: theme.spacing(2.5),
     gap: theme.spacing(2),
@@ -214,9 +214,9 @@ const styles = StyleSheet.create({
   },
   creatorAvatarText: { fontSize: 24, fontWeight: '800', color: theme.colors.accentDark },
   creatorInfo: { flex: 1 },
-  creatorBuilt: { fontSize: 12, color: theme.colors.textMuted, textAlign: 'right' },
-  creatorName:  { fontSize: 20, fontWeight: '800', color: theme.colors.primary, textAlign: 'right', marginTop: 2 },
-  creatorRole:  { fontSize: 13, color: theme.colors.textMuted, textAlign: 'right', marginTop: 2 },
+  creatorBuilt: { fontSize: 12, color: theme.colors.textMuted },
+  creatorName:  { fontSize: 20, fontWeight: '800', color: theme.colors.primary, marginTop: 2 },
+  creatorRole:  { fontSize: 13, color: theme.colors.textMuted, marginTop: 2 },
 
   section: {
     marginHorizontal: theme.spacing(2),
@@ -226,7 +226,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: theme.colors.textMuted,
-    textAlign: 'right',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: theme.spacing(1.5),
@@ -235,7 +234,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 24,
     color: theme.colors.text,
-    textAlign: 'right',
     backgroundColor: theme.colors.surface,
     borderRadius: theme.radiusLg,
     padding: theme.spacing(2),
@@ -243,7 +241,7 @@ const styles = StyleSheet.create({
   },
 
   techGrid: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     flexWrap: 'wrap',
     gap: theme.spacing(1),
   },
@@ -256,14 +254,14 @@ const styles = StyleSheet.create({
     gap: 4,
     ...theme.shadowSoft,
   },
-  techLabel: { fontSize: 13, fontWeight: '700', color: theme.colors.text,    textAlign: 'right' },
-  techDesc:  { fontSize: 11, color: theme.colors.textMuted, textAlign: 'right' },
+  techLabel: { fontSize: 13, fontWeight: '700', color: theme.colors.text },
+  techDesc:  { fontSize: 11, color: theme.colors.textMuted },
 
   linkRow: {
     backgroundColor: theme.colors.surface,
     borderRadius: theme.radiusLg,
     padding: theme.spacing(2),
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing(1.5),
     ...theme.shadowSoft,
@@ -277,20 +275,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   linkBody:  { flex: 1 },
-  linkLabel: { fontSize: 15, fontWeight: '700', color: theme.colors.text,    textAlign: 'right' },
-  linkSub:   { fontSize: 12, color: theme.colors.textMuted, textAlign: 'right', marginTop: 2 },
+  linkLabel: { fontSize: 15, fontWeight: '700', color: theme.colors.text },
+  linkSub:   { fontSize: 12, color: theme.colors.textMuted, marginTop: 2 },
 
   adminBtn: {
     backgroundColor: theme.colors.primary,
     borderRadius: theme.radiusLg,
     paddingVertical: theme.spacing(1.75),
     paddingHorizontal: theme.spacing(2),
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing(1),
     ...theme.shadow,
   },
-  adminBtnText: { flex: 1, fontSize: 15, fontWeight: '700', color: '#fff', textAlign: 'right' },
+  adminBtnText: { flex: 1, fontSize: 15, fontWeight: '700', color: '#fff' },
 
   footer: {
     marginTop: theme.spacing(4),

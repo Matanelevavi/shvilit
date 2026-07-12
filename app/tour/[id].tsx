@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+﻿import { useEffect, useRef, useState, useCallback } from 'react';
 import {
   Animated,
   Image,
@@ -236,8 +236,8 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     padding: theme.spacing(2),
   },
-  heroTitle: { color: '#fff', fontSize: 26, fontWeight: '800', textAlign: 'right' },
-  heroMeta: { color: '#e6efe9', fontSize: 14, textAlign: 'right', marginTop: 2 },
+  heroTitle: { color: '#fff', fontSize: 26, fontWeight: '800' },
+  heroMeta: { color: '#e6efe9', fontSize: 14, marginTop: 2 },
   saveBtn: {
     position: 'absolute',
     top: theme.spacing(1.5),
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     ...theme.shadow,
   },
   playerRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: theme.spacing(2),
@@ -292,10 +292,9 @@ const styles = StyleSheet.create({
   speedLabel: {
     fontSize: 13,
     color: theme.colors.textMuted,
-    textAlign: 'right',
     marginBottom: theme.spacing(1),
   },
-  speedRow: { flexDirection: 'row-reverse', gap: theme.spacing(0.75), paddingVertical: theme.spacing(0.5) },
+  speedRow: { flexDirection: 'row', gap: theme.spacing(0.75), paddingVertical: theme.spacing(0.5) },
   speedChip: {
     paddingVertical: theme.spacing(0.875),
     paddingHorizontal: theme.spacing(1.5),
@@ -314,17 +313,17 @@ const styles = StyleSheet.create({
     padding: theme.spacing(2),
     ...theme.shadowSoft,
   },
-  script: { fontSize: 18, lineHeight: 30, color: theme.colors.text, textAlign: 'right' },
+  script: { fontSize: 18, lineHeight: 30, color: theme.colors.text },
   scriptSpacing: { marginTop: theme.spacing(2) },
   profileLink: {
-    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: theme.spacing(0.75), marginHorizontal: theme.spacing(2), marginBottom: theme.spacing(1),
     backgroundColor: theme.colors.surface, borderRadius: theme.radiusLg,
     paddingVertical: theme.spacing(1.5), ...theme.shadowSoft,
   },
   profileLinkText: { color: theme.colors.primaryLight, fontWeight: '700', fontSize: 14 },
   attrPill: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'center',
     gap: theme.spacing(0.5),

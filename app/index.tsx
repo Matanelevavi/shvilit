@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+﻿import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -207,7 +207,7 @@ export default function MapScreen() {
           onChangeText={setQuery}
           placeholder="חפש מקום, או הקש על המפה"
           placeholderTextColor={theme.colors.textMuted}
-          textAlign="right"
+         
           returnKeyType="search"
           onSubmitEditing={onSearch}
         />
@@ -273,7 +273,8 @@ export default function MapScreen() {
             <ActivityIndicator color={theme.colors.accentDark} />
           ) : (
             <>
-              <Ionicons name="navigate" size={18} color={theme.colors.accentDark} />
+              {/* היפוך אופקי: החץ האלכסוני מצביע שמאלה-למעלה כמקובל ב-RTL */}
+              <Ionicons name="navigate" size={18} color={theme.colors.accentDark} style={{ transform: [{ scaleX: -1 }] }} />
               <Text style={styles.fabText}>מה יש סביבי?</Text>
             </>
           )}
@@ -297,21 +298,21 @@ const styles = StyleSheet.create({
     borderRadius: theme.radiusLg,
     paddingVertical: theme.spacing(1.5),
     paddingHorizontal: theme.spacing(2),
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing(1),
     ...theme.shadowSoft,
   },
-  searchText: { color: theme.colors.textMuted, fontSize: 14, flex: 1, textAlign: 'right' },
-  searchInput: { flex: 1, color: theme.colors.text, fontSize: 15, textAlign: 'right', padding: 0 },
+  searchText: { color: theme.colors.textMuted, fontSize: 14, flex: 1 },
+  searchInput: { flex: 1, color: theme.colors.text, fontSize: 15, padding: 0 },
   cardRow: { position: 'absolute', bottom: 92, left: 0, right: 0, maxHeight: 96 },
-  cardRowContent: { paddingHorizontal: theme.spacing(2), gap: theme.spacing(1.5), flexDirection: 'row-reverse' },
+  cardRowContent: { paddingHorizontal: theme.spacing(2), gap: theme.spacing(1.5), flexDirection: 'row' },
   card: {
     width: 240,
     backgroundColor: theme.colors.surface,
     borderRadius: theme.radiusLg,
     padding: theme.spacing(1),
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing(1),
     ...theme.shadowSoft,
@@ -323,19 +324,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cardBody: { flex: 1 },
-  cardTitle: { fontSize: 14, fontWeight: '700', color: theme.colors.text, textAlign: 'right' },
-  cardSummary: { fontSize: 12, color: theme.colors.textMuted, textAlign: 'right', marginTop: 2 },
+  cardTitle: { fontSize: 14, fontWeight: '700', color: theme.colors.text },
+  cardSummary: { fontSize: 12, color: theme.colors.textMuted, marginTop: 2 },
   actions: {
     position: 'absolute',
     bottom: theme.spacing(3),
     right: theme.spacing(2),
     left: theme.spacing(2),
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     gap: theme.spacing(1.5),
   },
   fab: {
     flex: 1,
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: theme.spacing(1),
@@ -375,7 +376,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pointsPill: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing(0.75),
     backgroundColor: theme.colors.surface,

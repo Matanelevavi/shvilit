@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -130,7 +130,7 @@ export default function LoginScreen() {
             onChangeText={setName}
             placeholder="איך קוראים לך?"
             placeholderTextColor="#9bb3a6"
-            textAlign="right"
+           
             returnKeyType="go"
             onSubmitEditing={onEnter}
             maxLength={24}
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing(2),
   },
   button: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing(1),
     backgroundColor: theme.colors.accent,

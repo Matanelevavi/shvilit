@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+﻿import { useCallback, useState } from 'react';
 import {
   Image,
   ScrollView,
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 18, fontWeight: '700', color: theme.colors.text },
   emptyHint: { fontSize: 14, color: theme.colors.textMuted, textAlign: 'center', maxWidth: 280 },
   card: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: theme.colors.surface,
     borderRadius: theme.radiusLg,
@@ -117,11 +117,11 @@ const styles = StyleSheet.create({
     gap: theme.spacing(1),
     ...theme.shadowSoft,
   },
-  cardMain: { flex: 1, flexDirection: 'row-reverse', alignItems: 'center', gap: theme.spacing(1.25) },
+  cardMain: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: theme.spacing(1.25) },
   thumb: { width: 60, height: 60, borderRadius: theme.radius },
   thumbPlaceholder: { backgroundColor: theme.colors.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
   body: { flex: 1 },
-  title: { fontSize: 16, fontWeight: '700', color: theme.colors.text, textAlign: 'right' },
-  meta: { fontSize: 13, color: theme.colors.textMuted, textAlign: 'right', marginTop: 2 },
+  title: { fontSize: 16, fontWeight: '700', color: theme.colors.text },
+  meta: { fontSize: 13, color: theme.colors.textMuted, marginTop: 2 },
   delBtn: { padding: theme.spacing(1) },
 });

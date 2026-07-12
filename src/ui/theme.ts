@@ -36,4 +36,7 @@ export const theme = {
     elevation: 2,
   },
   font: { h1: 30, h2: 24, h3: 18, body: 16, small: 13, tiny: 11 },
+  // הפונט האחיד של האפליקציה (Noto Sans Hebrew). ב-web מוחל גלובלית
+  // ב-app/_layout.tsx; המשקלים עצמם נטענים מ-public/fonts.
+  fonts: { family: 'Noto Sans Hebrew' },
 } as const;

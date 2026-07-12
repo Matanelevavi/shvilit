@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+﻿import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { theme } from '@/ui/theme';
 
 /**
@@ -53,9 +53,9 @@ export default function PrivacyScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
   content: { padding: theme.spacing(3), paddingBottom: theme.spacing(6), maxWidth: 640, width: '100%', alignSelf: 'center' },
-  title: { fontSize: 22, fontWeight: '800', color: theme.colors.text, textAlign: 'right' },
-  updated: { fontSize: 12, color: theme.colors.textMuted, textAlign: 'right', marginTop: 4, marginBottom: theme.spacing(2) },
+  title: { fontSize: 22, fontWeight: '800', color: theme.colors.text },
+  updated: { fontSize: 12, color: theme.colors.textMuted, marginTop: 4, marginBottom: theme.spacing(2) },
   section: { marginTop: theme.spacing(2) },
-  sectionTitle: { fontSize: 16, fontWeight: '700', color: theme.colors.primary, textAlign: 'right', marginBottom: 6 },
-  body: { fontSize: 14, lineHeight: 22, color: theme.colors.text, textAlign: 'right' },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: theme.colors.primary, marginBottom: 6 },
+  body: { fontSize: 14, lineHeight: 22, color: theme.colors.text },
 });

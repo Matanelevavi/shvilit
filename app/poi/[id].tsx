@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -252,8 +252,8 @@ const styles = StyleSheet.create({
     position: 'absolute', left: 0, right: 0, bottom: 0, height: 140,
     justifyContent: 'flex-end', padding: theme.spacing(2), gap: 4,
   },
-  heroTitle:      { color: '#fff', fontSize: 26, fontWeight: '800', textAlign: 'right' },
-  heroAttrib:     { flexDirection: 'row-reverse', alignItems: 'center', gap: 4 },
+  heroTitle:      { color: '#fff', fontSize: 26, fontWeight: '800' },
+  heroAttrib:     { flexDirection: 'row', alignItems: 'center', gap: 4 },
   heroAttribText: { fontSize: 11, color: 'rgba(255,255,255,0.65)' },
 
   summaryCard: {
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
     padding: theme.spacing(2),
     ...theme.shadowSoft,
   },
-  summaryText: { fontSize: 15, lineHeight: 24, color: theme.colors.text, textAlign: 'right' },
+  summaryText: { fontSize: 15, lineHeight: 24, color: theme.colors.text },
 
   builderCard: {
     backgroundColor: theme.colors.surface,
@@ -275,15 +275,15 @@ const styles = StyleSheet.create({
   },
   builderTitle: {
     fontSize: 18, fontWeight: '800', color: theme.colors.primary,
-    textAlign: 'right', marginBottom: theme.spacing(2),
+    marginBottom: theme.spacing(2),
   },
   builderLabel: {
     fontSize: 12, fontWeight: '700', color: theme.colors.textMuted,
-    textAlign: 'right', textTransform: 'uppercase', letterSpacing: 0.6,
+    textTransform: 'uppercase', letterSpacing: 0.6,
     marginBottom: theme.spacing(1), marginTop: theme.spacing(1.5),
   },
 
-  lengthRow: { flexDirection: 'row-reverse', gap: theme.spacing(1) },
+  lengthRow: { flexDirection: 'row', gap: theme.spacing(1) },
   lengthCard: {
     flex: 1, alignItems: 'center', gap: 3,
     backgroundColor: theme.colors.surfaceAlt,
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
   lengthWords: { fontSize: 10, color: theme.colors.textMuted },
   lengthWordsActive: { color: 'rgba(255,255,255,0.75)' },
 
-  styleGrid: { flexDirection: 'row-reverse', gap: theme.spacing(1) },
+  styleGrid: { flexDirection: 'row', gap: theme.spacing(1) },
   styleCard: {
     flex: 1, alignItems: 'center', gap: 4,
     backgroundColor: theme.colors.surfaceAlt,
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
   styleDesc:  { fontSize: 9,  color: theme.colors.textMuted, textAlign: 'center', lineHeight: 13 },
 
   previewPill: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing(0.75),
     marginTop: theme.spacing(2),
@@ -331,13 +331,13 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing(1),
     paddingHorizontal: theme.spacing(2),
   },
-  previewText: { fontSize: 12, color: theme.colors.primaryLight, fontWeight: '600', textAlign: 'right', flex: 1 },
+  previewText: { fontSize: 12, color: theme.colors.primaryLight, fontWeight: '600', flex: 1 },
 
   ctaSection: { paddingHorizontal: theme.spacing(2), gap: theme.spacing(1.25) },
   ctaPrimary: { borderRadius: theme.radiusLg, overflow: 'hidden', ...theme.shadow },
   ctaDisabled: { opacity: 0.65 },
   ctaGrad: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: theme.spacing(1),
@@ -353,9 +353,9 @@ const styles = StyleSheet.create({
   },
   ctaSubLabelText: { fontSize: 10, fontWeight: '700', color: theme.colors.accentDark },
 
-  ctaSecondaryRow: { flexDirection: 'row-reverse', gap: theme.spacing(1) },
+  ctaSecondaryRow: { flexDirection: 'row', gap: theme.spacing(1) },
   ctaSecondary: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: theme.spacing(1),

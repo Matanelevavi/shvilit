@@ -196,7 +196,6 @@ export default function MapScreenWeb() {
             onChangeText={setQuery}
             placeholder="לאן תרצה לטייל? (מצדה, הכותל...)"
             placeholderTextColor="#9bb3a6"
-            textAlign="right"
             returnKeyType="search"
             onSubmitEditing={() => runSearch(query)}
           />
@@ -229,7 +228,8 @@ export default function MapScreenWeb() {
 
         {/* Nearby button */}
         <TouchableOpacity style={styles.nearbyBtn} onPress={searchNearby} activeOpacity={0.9}>
-          <Ionicons name="navigate" size={18} color={theme.colors.primary} />
+          {/* היפוך אופקי: החץ האלכסוני מצביע שמאלה-למעלה כמקובל ב-RTL */}
+          <Ionicons name="navigate" size={18} color={theme.colors.primary} style={{ transform: [{ scaleX: -1 }] }} />
           <Text style={styles.nearbyText}>מה יש סביבי?</Text>
         </TouchableOpacity>
 
@@ -270,7 +270,8 @@ export default function MapScreenWeb() {
                   </Text>
                 </View>
                 <View style={styles.cardArrow}>
-                  <Ionicons name="arrow-forward" size={16} color={theme.colors.primaryLight} />
+                  {/* בעברית "קדימה" מצביע שמאלה - לכן arrow-back */}
+                  <Ionicons name="arrow-back" size={16} color={theme.colors.primaryLight} />
                 </View>
               </TouchableOpacity>
             ))}
@@ -308,15 +309,15 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: theme.radiusXl,
     borderBottomRightRadius: theme.radiusXl,
   },
-  headerTop: { flexDirection: 'row-reverse', alignItems: 'center', gap: theme.spacing(1.5) },
+  headerTop: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing(1.5) },
   logo: { width: 44, height: 44, borderRadius: 10 },
   headerCenter: { flex: 1 },
-  appName:    { color: '#fff', fontSize: 26, fontWeight: '800', textAlign: 'right', lineHeight: 30 },
-  appTagline: { color: '#c8ddd5', fontSize: 13, textAlign: 'right' },
-  headerActions: { flexDirection: 'row-reverse', alignItems: 'center', gap: theme.spacing(0.5) },
+  appName:    { color: '#fff', fontSize: 26, fontWeight: '800', lineHeight: 30 },
+  appTagline: { color: '#c8ddd5', fontSize: 13 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing(0.5) },
   headerBtn: { padding: theme.spacing(0.5) },
   pointsChip: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
     backgroundColor: 'rgba(232,163,61,0.18)',
@@ -328,7 +329,7 @@ const styles = StyleSheet.create({
   },
   pointsChipText: { color: theme.colors.accent, fontWeight: '800', fontSize: 13 },
 
-  searchRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: theme.spacing(1), marginTop: theme.spacing(2.5) },
+  searchRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing(1), marginTop: theme.spacing(2.5) },
   searchInput: {
     flex: 1,
     backgroundColor: '#fff',
@@ -347,9 +348,9 @@ const styles = StyleSheet.create({
 
   body: { padding: theme.spacing(2), gap: theme.spacing(1.5) },
 
-  suggestionsRow: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: theme.spacing(0.875) },
+  suggestionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing(0.875) },
   suggChip: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
     backgroundColor: theme.colors.surface,
@@ -363,7 +364,7 @@ const styles = StyleSheet.create({
   suggChipText: { color: theme.colors.primary, fontSize: 13, fontWeight: '600' },
 
   nearbyBtn: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: theme.spacing(1),
@@ -387,11 +388,11 @@ const styles = StyleSheet.create({
 
   resultsTitle: {
     fontSize: 14, fontWeight: '700', color: theme.colors.textMuted,
-    textAlign: 'right', marginTop: theme.spacing(0.5),
+    marginTop: theme.spacing(0.5),
     textTransform: 'uppercase', letterSpacing: 0.5,
   },
   card: {
-    flexDirection: 'row-reverse', alignItems: 'center',
+    flexDirection: 'row', alignItems: 'center',
     gap: theme.spacing(1.25),
     backgroundColor: theme.colors.surface,
     borderRadius: theme.radiusLg,
@@ -401,8 +402,8 @@ const styles = StyleSheet.create({
   thumb: { width: 68, height: 68, borderRadius: theme.radius },
   thumbPlaceholder: { backgroundColor: theme.colors.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
   cardBody: { flex: 1 },
-  cardTitle:   { fontSize: 16, fontWeight: '700', color: theme.colors.text,    textAlign: 'right' },
-  cardSummary: { fontSize: 13, color: theme.colors.textMuted, textAlign: 'right', marginTop: 3, lineHeight: 19 },
+  cardTitle:   { fontSize: 16, fontWeight: '700', color: theme.colors.text },
+  cardSummary: { fontSize: 13, color: theme.colors.textMuted, marginTop: 3, lineHeight: 19 },
   cardArrow: {
     width: 32, height: 32, borderRadius: 16,
     backgroundColor: theme.colors.surfaceAlt,
@@ -410,7 +411,7 @@ const styles = StyleSheet.create({
   },
 
   rankTeaser: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing(1.5),
     backgroundColor: theme.colors.surface,
@@ -423,6 +424,6 @@ const styles = StyleSheet.create({
   },
   rankTeaserEmoji:  { fontSize: 28 },
   rankTeaserBody:   { flex: 1 },
-  rankTeaserName:   { fontSize: 15, fontWeight: '700', color: theme.colors.primary, textAlign: 'right' },
-  rankTeaserNext:   { fontSize: 12, color: theme.colors.textMuted, textAlign: 'right', marginTop: 2 },
+  rankTeaserName:   { fontSize: 15, fontWeight: '700', color: theme.colors.primary },
+  rankTeaserNext:   { fontSize: 12, color: theme.colors.textMuted, marginTop: 2 },
 });

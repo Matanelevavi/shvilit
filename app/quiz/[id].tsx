@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
   errorText: { fontSize: 16, color: theme.colors.text, textAlign: 'center', lineHeight: 24 },
 
   repeatBanner: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     gap: theme.spacing(0.75),
     backgroundColor: theme.colors.surfaceAlt,
@@ -228,19 +228,19 @@ const styles = StyleSheet.create({
     padding: theme.spacing(1.25),
     marginBottom: theme.spacing(0.5),
   },
-  repeatText: { flex: 1, fontSize: 13, color: theme.colors.primaryLight, textAlign: 'right' },
+  repeatText: { flex: 1, fontSize: 13, color: theme.colors.primaryLight },
 
-  progress: { fontSize: 13, color: theme.colors.textMuted, textAlign: 'right' },
-  question: { fontSize: 20, fontWeight: '800', color: theme.colors.text, textAlign: 'right', marginBottom: theme.spacing(1) },
+  progress: { fontSize: 13, color: theme.colors.textMuted },
+  question: { fontSize: 20, fontWeight: '800', color: theme.colors.text, marginBottom: theme.spacing(1) },
   option: {
-    flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     backgroundColor: theme.colors.surface, borderRadius: theme.radiusLg,
     borderWidth: 1.5, borderColor: theme.colors.border, padding: theme.spacing(2), ...theme.shadowSoft,
   },
   optionCorrect: { borderColor: theme.colors.primaryLight, backgroundColor: '#e3efe8' },
   optionWrong: { borderColor: theme.colors.danger, backgroundColor: '#fbeceb' },
   optionDim: { opacity: 0.6 },
-  optionText: { flex: 1, fontSize: 16, color: theme.colors.text, textAlign: 'right' },
+  optionText: { flex: 1, fontSize: 16, color: theme.colors.text },
 
   primaryBtn: {
     backgroundColor: theme.colors.accent, paddingVertical: theme.spacing(2),
