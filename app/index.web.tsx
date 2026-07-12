@@ -67,7 +67,7 @@ export default function MapScreenWeb() {
             setPoints(await getPoints());
             showConfirm(
               '✅ הסרטון מוכן!',
-              `סרטון הסיור של "${p.location}" מוכן לצפייה.`,
+              `סרטון ההדרכה של "${p.location}" מוכן לצפייה.`,
               'לצפייה',
               () => router.push(`/video/${encodeURIComponent(p.location)}?savedUrl=${encodeURIComponent(s.video_url!)}&minutes=${p.minutes}&style=${p.style}`),
               { cancelText: 'אחר כך' },
@@ -90,7 +90,7 @@ export default function MapScreenWeb() {
       const results = await getPoiProvider().searchByName(term.trim());
       cachePois(results);
       setPois(results);
-      if (results.length === 0) setNotice('לא נמצאו תוצאות. נסה שם אחר.');
+      if (results.length === 0) setNotice('לא נמצאו תוצאות. אפשר לנסות שם אחר.');
     } catch (err) {
       setNotice(`שגיאה: ${err instanceof Error ? err.message : 'שגיאה'}`);
     } finally {
@@ -155,7 +155,7 @@ export default function MapScreenWeb() {
           <View style={styles.headerCenter}>
             <Text style={styles.appName}>שבילית</Text>
             <Text style={styles.appTagline}>
-              {profile ? `שלום, ${profile.name}` : 'סיורי הדרכה חכמים בכל מקום'}
+              {profile ? `שלום, ${profile.name}` : 'הדרכות חכמות בכל מקום'}
             </Text>
           </View>
 
@@ -240,8 +240,8 @@ export default function MapScreenWeb() {
         {!searched && !loading && (
           <View style={styles.emptyState}>
             <Ionicons name="compass-outline" size={64} color={theme.colors.border} />
-            <Text style={styles.emptyTitle}>מוכן לצאת לדרך?</Text>
-            <Text style={styles.emptyText}>חפש מקום או בחר הצעה מהרשימה למעלה, ואנחנו ניצור עבורך סיור מודרך בעברית תוך שניות.</Text>
+            <Text style={styles.emptyTitle}>רוצה לצאת לדרך?</Text>
+            <Text style={styles.emptyText}>רק צריך לבחור מקום או אחת מההצעות שלמעלה, ואנחנו ניצור לך הדרכה בעברית תוך שניות.</Text>
           </View>
         )}
 
@@ -266,7 +266,7 @@ export default function MapScreenWeb() {
                 <View style={styles.cardBody}>
                   <Text style={styles.cardTitle} numberOfLines={1}>{poi.title}</Text>
                   <Text style={styles.cardSummary} numberOfLines={2}>
-                    {poi.summary || 'הקש ליצירת סיור מודרך'}
+                    {poi.summary || 'לחיצה יוצרת הדרכה'}
                   </Text>
                 </View>
                 <View style={styles.cardArrow}>

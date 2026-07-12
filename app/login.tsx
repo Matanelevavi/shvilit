@@ -99,7 +99,7 @@ export default function LoginScreen() {
     <LinearGradient colors={theme.gradientLogin} style={styles.container}>
       <AnimatedLogo />
       <Text style={styles.title}>שבילית</Text>
-      <Text style={styles.tagline}>סיורי הדרכה חכמים,{'\n'}בכל מקום שתעצרו בו</Text>
+      <Text style={styles.tagline}>הדרכות חכמות,{'\n'}בכל מקום שתעצרו בו</Text>
 
       {config.hasSupabase && config.googleEnabled ? (
         <>
@@ -119,7 +119,7 @@ export default function LoginScreen() {
             )}
           </TouchableOpacity>
           <TouchableOpacity onPress={onGuest} style={styles.guestLink} activeOpacity={0.7}>
-            <Text style={styles.guestLinkText}>המשך כאורח</Text>
+            <Text style={styles.guestLinkText}>להמשיך כאורח</Text>
           </TouchableOpacity>
         </>
       ) : (
@@ -145,7 +145,7 @@ export default function LoginScreen() {
             <Text style={styles.buttonText}>כניסה</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={onGuest} style={styles.guestLink} activeOpacity={0.7}>
-            <Text style={styles.guestLinkText}>המשך כאורח</Text>
+            <Text style={styles.guestLinkText}>להמשיך כאורח</Text>
           </TouchableOpacity>
         </>
       )}

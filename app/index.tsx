@@ -63,7 +63,7 @@ export default function MapScreen() {
             setPoints(await getPoints()); // רענון
             showConfirm(
               '✅ הסרטון מוכן!',
-              `סרטון הסיור של "${p.location}" מוכן לצפייה.`,
+              `סרטון ההדרכה של "${p.location}" מוכן לצפייה.`,
               'לצפייה',
               () => router.push(`/video/${encodeURIComponent(p.location)}?savedUrl=${encodeURIComponent(s.video_url!)}&minutes=${p.minutes}&style=${p.style}`),
               { cancelText: 'אחר כך' },
@@ -90,7 +90,7 @@ export default function MapScreen() {
         mapRef.current?.animateToRegion(next, 800);
       }
       if (results.length === 0) {
-        showAlert('לא נמצאו תוצאות', 'נסה שם מקום אחר.');
+        showAlert('לא נמצאו תוצאות', 'אפשר לנסות שם מקום אחר.');
       }
     } catch (err) {
       showAlert('שגיאה בחיפוש', err instanceof Error ? err.message : 'שגיאה');
@@ -133,7 +133,7 @@ export default function MapScreen() {
       cachePois(results);
       setPois(results);
       if (results.length === 0) {
-        showAlert('לא נמצאו נקודות עניין', 'נסה אזור אחר או הגדל את טווח החיפוש.');
+        showAlert('לא נמצאו נקודות עניין', 'אפשר לנסות אזור אחר או להגדיל את טווח החיפוש.');
       }
     } catch (err) {
       showAlert('שגיאה בטעינת נקודות', err instanceof Error ? err.message : 'שגיאה');
@@ -189,7 +189,7 @@ export default function MapScreen() {
             key={poi.id}
             coordinate={poi.coordinate}
             title={poi.title}
-            description="הקש לצפייה וליצירת סיור"
+            description="לחיצה פותחת יצירת הדרכה"
             pinColor={theme.colors.accent}
             onCalloutPress={() => router.push(`/poi/${poi.id}`)}
           />
@@ -205,7 +205,7 @@ export default function MapScreen() {
           style={styles.searchInput}
           value={query}
           onChangeText={setQuery}
-          placeholder="חפש מקום, או הקש על המפה"
+          placeholder="חיפוש מקום, או הקשה על המפה"
           placeholderTextColor={theme.colors.textMuted}
          
           returnKeyType="search"
@@ -259,7 +259,7 @@ export default function MapScreen() {
                   {poi.title}
                 </Text>
                 <Text style={styles.cardSummary} numberOfLines={2}>
-                  {poi.summary || 'הקש ליצירת סיור'}
+                  {poi.summary || 'לחיצה יוצרת הדרכה'}
                 </Text>
               </View>
             </TouchableOpacity>

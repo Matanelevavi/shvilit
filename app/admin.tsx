@@ -38,7 +38,7 @@ const EVENT_LABELS: Record<string, string> = {
   search: 'חיפושים',
   nearby_search: 'חיפוש "מה יש סביבי"',
   poi_view: 'צפיות בנקודת עניין',
-  tour_generated: 'סיורי שמע שנוצרו',
+  tour_generated: 'הדרכות שמע שנוצרו',
   video_requested: 'בקשות וידאו',
   video_ready: 'סרטונים שהושלמו',
   quiz_started: 'חידונים שהתחילו',
@@ -228,7 +228,7 @@ export default function AdminScreen() {
         <View style={styles.activityRow}>
           <View style={styles.activityItem}>
             <Text style={styles.activityNum}>{totalTours}</Text>
-            <Text style={styles.activityLabel}>סיורי שמע</Text>
+            <Text style={styles.activityLabel}>הדרכות שמע</Text>
           </View>
           <View style={styles.activityDivider} />
           <View style={styles.activityItem}>
@@ -330,7 +330,7 @@ export default function AdminScreen() {
                   </View>
                   <View style={styles.expandedStat}>
                     <Text style={styles.expandedNum}>{user.tourCount}</Text>
-                    <Text style={styles.expandedLabel}>סיורים</Text>
+                    <Text style={styles.expandedLabel}>הדרכות</Text>
                   </View>
                   <View style={styles.expandedStat}>
                     <Text style={styles.expandedNum}>{user.videoCount}</Text>

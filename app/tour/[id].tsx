@@ -65,7 +65,7 @@ export default function TourScreen() {
   if (!tour) {
     return (
       <View style={styles.center}>
-        <Text style={styles.muted}>הסיור לא נמצא. חזור ובחר נקודת עניין.</Text>
+        <Text style={styles.muted}>ההדרכה לא נמצאה. אפשר לחזור ולבחור נקודת עניין.</Text>
       </View>
     );
   }

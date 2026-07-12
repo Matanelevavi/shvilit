@@ -60,7 +60,7 @@ export default function VideoTourScreen() {
   // אם יש savedUrl - לא צריך לייצר
   useEffect(() => {
     if (params.savedUrl) return;
-    if (!poi) { setError('נקודת העניין לא נמצאה. חזור ובחר מקום.'); return; }
+    if (!poi) { setError('נקודת העניין לא נמצאה. אפשר לחזור ולבחור מקום.'); return; }
     locationRef.current = poi.title;
     startRequest(poi.title);
     return cleanup;
@@ -79,7 +79,7 @@ export default function VideoTourScreen() {
       if (!activeRef.current) return;
       if (Date.now() - startedRef.current > MAX_POLL_MS) {
         await removePendingVideo(location);
-        setError('הפקת הווידאו לקחה יותר מדי זמן. נסה שוב.');
+        setError('הפקת הווידאו לקחה יותר מדי זמן. אפשר לנסות שוב.');
         return;
       }
       try {
@@ -145,7 +145,7 @@ export default function VideoTourScreen() {
       } catch (e) {
         if (activeRef.current) {
           await removePendingVideo(location);
-          setError(e instanceof Error ? `${e.message}. ה-Space אולי מתעורר - נסה שוב בעוד דקה.` : 'שגיאת רשת.');
+          setError(e instanceof Error ? `${e.message}. ה-Space אולי מתעורר - כדאי לנסות שוב בעוד דקה.` : 'שגיאת רשת.');
         }
       }
     })();
@@ -170,7 +170,7 @@ export default function VideoTourScreen() {
           geminiRetryRef.current = 0;
           startRequest(poi.title);
         }}>
-          <Text style={styles.retryText}>נסה שוב</Text>
+          <Text style={styles.retryText}>לנסות שוב</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <Text style={styles.backText}>חזרה</Text>
@@ -183,7 +183,7 @@ export default function VideoTourScreen() {
   if (url) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>{poi?.title ?? 'סיור וידאו'}</Text>
+        <Text style={styles.title}>{poi?.title ?? 'הדרכת וידאו'}</Text>
         <Text style={styles.meta}>{minutes} דקות · {TOUR_STYLE_LABELS[style]}</Text>
         <VideoPlayer uri={url} />
         <View style={styles.actionsRow}>
@@ -193,7 +193,7 @@ export default function VideoTourScreen() {
             activeOpacity={saved ? 1 : 0.85}
           >
             <Ionicons name={saved ? 'bookmark' : 'bookmark-outline'} size={18} color={saved ? theme.colors.primary : theme.colors.primary} />
-            <Text style={styles.saveBtnText}>{saved ? 'נשמר' : 'שמור סרטון'}</Text>
+            <Text style={styles.saveBtnText}>{saved ? 'נשמר' : 'שמירת סרטון'}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.profileBtn} onPress={() => router.push('/profile')}>
             <Ionicons name="person-outline" size={18} color={theme.colors.primaryLight} />
@@ -209,7 +209,7 @@ export default function VideoTourScreen() {
   return (
     <View style={styles.center}>
       <ActivityIndicator size="large" color={theme.colors.primary} />
-      <Text style={styles.progressTitle}>מכינים את סרטון הסיור שלך...</Text>
+      <Text style={styles.progressTitle}>מכינים את סרטון ההדרכה שלך...</Text>
       <Text style={styles.progressNote}>{PROGRESS_MSGS[msgIdx]}</Text>
       <Text style={styles.progressHint}>תסריט, קריינות, תמונות ועריכה - כ-1-3 דקות</Text>
       <View style={styles.exitHint}>

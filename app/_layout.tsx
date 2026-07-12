@@ -97,9 +97,9 @@ function AuthGate() {
       <Stack.Screen name="login" options={{ headerShown: false }} />
       <Stack.Screen name="index" options={{ title: 'שבילית' }} />
       <Stack.Screen name="poi/[id]" options={{ title: 'נקודת עניין' }} />
-      <Stack.Screen name="tour/[id]" options={{ title: 'הסיור שלך' }} />
-      <Stack.Screen name="video/[id]" options={{ title: 'סיור וידאו' }} />
-      <Stack.Screen name="saved" options={{ title: 'הסיורים שלי' }} />
+      <Stack.Screen name="tour/[id]" options={{ title: 'ההדרכה שלך' }} />
+      <Stack.Screen name="video/[id]" options={{ title: 'הדרכת וידאו' }} />
+      <Stack.Screen name="saved" options={{ title: 'ההדרכות שלי' }} />
       <Stack.Screen name="quiz/[id]" options={{ title: 'חידון' }} />
       <Stack.Screen name="profile" options={{ title: 'האזור האישי שלי' }} />
       <Stack.Screen name="about"         options={{ title: 'אודות שבילית' }} />

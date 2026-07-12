@@ -48,7 +48,7 @@ export default function QuizScreen() {
     Promise.all([sourceTextPromise.then((sourceText) => requestQuiz(location, sourceText)), isQuizDone(location)])
       .then(([qs, done]) => {
         if (!active) return;
-        if (qs.length === 0) { setError('לא נוצרו שאלות. נסה מקום אחר.'); return; }
+        if (qs.length === 0) { setError('לא נוצרו שאלות. אפשר לנסות מקום אחר.'); return; }
         setQuestions(qs.map(shuffleQuestion));
         setAlreadyDone(done);
       })
@@ -125,7 +125,7 @@ export default function QuizScreen() {
         <Ionicons name="help-circle-outline" size={44} color={theme.colors.danger} />
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity style={styles.primaryBtn} onPress={retry}>
-          <Text style={styles.primaryBtnText}>נסה שוב</Text>
+          <Text style={styles.primaryBtnText}>לנסות שוב</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.linkBtn} onPress={() => router.back()}>
           <Text style={styles.linkText}>חזרה</Text>

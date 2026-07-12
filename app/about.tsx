@@ -1,8 +1,9 @@
-﻿import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   Image,
   Linking,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -15,17 +16,9 @@ import { theme } from '@/ui/theme';
 import { showAlert } from '@/ui/dialogs';
 import { unlockAdmin, isAdminUnlocked } from '@/state/userRegistry';
 
-const VERSION = '1.0.0';
 const GITHUB = 'https://github.com/Matanelevavi/shvilit';
-
-const TECH = [
-  { icon: 'phone-portrait-outline', label: 'React Native + Expo', desc: 'פריימוורק לפיתוח' },
-  { icon: 'sparkles-outline',       label: 'Gemini AI (Google)', desc: 'מנוע יצירת התסריטים' },
-  { icon: 'book-outline',           label: 'Wikipedia API',      desc: 'מידע אנציקלופדי' },
-  { icon: 'map-outline',            label: 'OpenStreetMap',       desc: 'מידע גאוגרפי' },
-  { icon: 'cloud-outline',          label: 'HuggingFace Spaces', desc: 'אחסון ה-backend' },
-  { icon: 'globe-outline',          label: 'Cloudflare Workers',  desc: 'אחסון ה-web app' },
-];
+const SITE_URL = 'https://shvilit.shvilit-tours.workers.dev';
+const FEEDBACK_EMAIL = 'matanelevavi@gmail.com';
 
 export default function AboutScreen() {
   const router = useRouter();
@@ -33,6 +26,8 @@ export default function AboutScreen() {
   const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [adminVisible, setAdminVisible] = useState(false);
 
+  // מצב מפתח נסתר: 7 הקשות רצופות על הלוגו פותחות גישה לפאנל הניהול.
+  // לא מוצג/מרומז למשתמש רגיל - בכוונה נשאר "אסטר ביצה" קטן.
   const checkAdminUnlock = useCallback(async () => {
     const already = await isAdminUnlocked();
     if (already) { setAdminVisible(true); return; }
@@ -49,6 +44,21 @@ export default function AboutScreen() {
     }
   }, []);
 
+  const onShare = async () => {
+    try {
+      await Share.share({
+        message: 'מצאתי אפליקציה ששווה להכיר לפני הטיול הבא - שבילית יוצרת הדרכה מותאמת לכל מקום, תוך שניות.',
+        url: SITE_URL,
+      });
+    } catch {
+      // שיתוף בוטל/לא נתמך בדפדפן - לא קריטי
+    }
+  };
+
+  const onFeedback = () => {
+    Linking.openURL(`mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent('משוב על שבילית')}`);
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
 
@@ -64,70 +74,43 @@ export default function AboutScreen() {
           </View>
         </TouchableOpacity>
         <Text style={styles.appName}>שבילית</Text>
-        <Text style={styles.appTagline}>הדרכת טיולים חכמה, בכל מקום</Text>
-        <View style={styles.versionBadge}>
-          <Text style={styles.versionText}>גרסה {VERSION}</Text>
-        </View>
       </LinearGradient>
 
-      {/* Creator card */}
-      <View style={styles.creatorCard}>
-        <LinearGradient colors={[theme.colors.accent + '22', theme.colors.accent + '08']} style={styles.creatorGrad}>
-          <View style={styles.creatorAvatar}>
-            <Text style={styles.creatorAvatarText}>מ</Text>
-          </View>
-          <View style={styles.creatorInfo}>
-            <Text style={styles.creatorBuilt}>פותחה על ידי</Text>
-            <Text style={styles.creatorName}>מתנאל לבבי</Text>
-            <Text style={styles.creatorRole}>מפתח FullStack · סטודנט למדעי המחשב</Text>
-          </View>
-        </LinearGradient>
-      </View>
-
-      {/* Description */}
+      {/* הסיפור - למה שבילית קיימת */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>מה זה שבילית?</Text>
-        <Text style={styles.bodyText}>
-          שבילית היא אפליקציית הדרכת טיולים המשתמשת ב-AI כדי ליצור סיורי שמע ווידאו מותאמים אישית
-          לכל מקום. בחרו נקודת עניין, בחרו סגנון וסיור מותאם ייווצר עבורכם תוך שניות.
+        <Text style={styles.storyText}>
+          איזו ארץ מדהימה יש לנו - מהנופים הירוקים של הכנרת והגולן, דרך העתיקות של ירושלים
+          ויהודה, ועד להרים האדומים של אילת ומצוקי האלמוגים של ים סוף. כל פינה כאן מספרת
+          סיפור אחר.
         </Text>
-        <Text style={[styles.bodyText, { marginTop: theme.spacing(1) }]}>
-          האפליקציה נבנתה כפרויקט אישי מתוך אהבה לטיולים ולטכנולוגיה, עם דגש על חוויית משתמש
-          ישראלית - בעברית, RTL, ועם תמיכה מלאה בתרבות המקומית.
+        <Text style={[styles.storyText, styles.storyTextSpacing]}>
+          תמיד כשיצאתי לטייל רציתי להבין יותר על המקום שאני מגיע אליו - גם בטיול לבד, ובטח
+          כשהדרכתי. שעות שלמות עברו בין ויקיפדיה, אתרי היסטוריה ובלוגים כדי לאסוף מידע לפני
+          כל טיול. מכאן נולד הרעיון: מערכת אחת שבונה הדרכה מעניינת ועוזרת להבין לעומק את
+          המקום - ההיסטוריה שלו, הצמחייה, הגיאולוגיה, החשיבות הגיאוגרפית שלו.
+        </Text>
+        <Text style={[styles.storyText, styles.storyTextSpacing]}>
+          כך נולדה שבילית: בוחרים מקום, בוחרים אורך וסגנון, וההדרכה - כטקסט, כשמע או כווידאו -
+          מוכנה תוך שניות, מבוססת על מקורות אמינים.
         </Text>
       </View>
 
-      {/* Tech stack */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>טכנולוגיות</Text>
-        <View style={styles.techGrid}>
-          {TECH.map(({ icon, label, desc }) => (
-            <View key={label} style={styles.techCard}>
-              <Ionicons name={icon as any} size={22} color={theme.colors.primaryLight} />
-              <Text style={styles.techLabel}>{label}</Text>
-              <Text style={styles.techDesc}>{desc}</Text>
-            </View>
-          ))}
-        </View>
-      </View>
-
-      {/* Links */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>קישורים</Text>
-        <TouchableOpacity
-          style={styles.linkRow}
-          onPress={() => Linking.openURL(GITHUB)}
-          activeOpacity={0.8}
-        >
-          <View style={styles.linkIcon}>
-            <Ionicons name="logo-github" size={22} color={theme.colors.primary} />
-          </View>
-          <View style={styles.linkBody}>
-            <Text style={styles.linkLabel}>קוד פתוח ב-GitHub</Text>
-            <Text style={styles.linkSub}>github.com/Matanelevavi/shvilit</Text>
-          </View>
-          <Ionicons name="open-outline" size={16} color={theme.colors.textMuted} />
+      {/* CTA - כמה אפשרויות זורמות, בלי לחץ */}
+      <View style={styles.ctaSection}>
+        <TouchableOpacity style={styles.ctaPrimary} onPress={() => router.push('/')} activeOpacity={0.9}>
+          <Ionicons name="trail-sign-outline" size={20} color={theme.colors.accentDark} />
+          <Text style={styles.ctaPrimaryText}>צאו לדרך</Text>
         </TouchableOpacity>
+        <View style={styles.ctaSecondaryRow}>
+          <TouchableOpacity style={styles.ctaSecondary} onPress={onShare} activeOpacity={0.85}>
+            <Ionicons name="share-social-outline" size={18} color={theme.colors.primary} />
+            <Text style={styles.ctaSecondaryText}>שיתוף עם חברים</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.ctaSecondary} onPress={onFeedback} activeOpacity={0.85}>
+            <Ionicons name="chatbubble-ellipses-outline" size={18} color={theme.colors.primary} />
+            <Text style={styles.ctaSecondaryText}>שליחת משוב</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Admin access (after unlock) */}
@@ -146,10 +129,12 @@ export default function AboutScreen() {
       )}
 
       {/* Footer */}
-      <Text style={styles.footer}>
-        © {new Date().getFullYear()} מתנאל לבבי · כל הזכויות שמורות{'\n'}
-        שבילית אינה קשורה לוויקיפדיה או ל-Google
-      </Text>
+      <TouchableOpacity onPress={() => Linking.openURL(GITHUB)} activeOpacity={0.7}>
+        <Text style={styles.footer}>
+          נבנתה על ידי מתנאל לבבי · קוד פתוח ב-GitHub{'\n'}
+          © {new Date().getFullYear()} שבילית - אינה קשורה לוויקיפדיה או ל-Google
+        </Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -179,104 +164,54 @@ const styles = StyleSheet.create({
     elevation: 12,
   },
   logo: { width: 72, height: 72 },
-  appName:    { fontSize: 38, fontWeight: '800', color: '#fff', letterSpacing: -0.5 },
-  appTagline: { fontSize: 15, color: '#c8ddd5', textAlign: 'center', marginTop: 2 },
-  versionBadge: {
-    marginTop: theme.spacing(1.5),
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    borderRadius: 999,
-  },
-  versionText: { fontSize: 12, color: '#d7e6dd', fontWeight: '600' },
-
-  creatorCard: {
-    margin: theme.spacing(2),
-    borderRadius: theme.radiusXl,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: theme.colors.accent + '44',
-    ...theme.shadow,
-  },
-  creatorGrad: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: theme.spacing(2.5),
-    gap: theme.spacing(2),
-  },
-  creatorAvatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: theme.colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  creatorAvatarText: { fontSize: 24, fontWeight: '800', color: theme.colors.accentDark },
-  creatorInfo: { flex: 1 },
-  creatorBuilt: { fontSize: 12, color: theme.colors.textMuted },
-  creatorName:  { fontSize: 20, fontWeight: '800', color: theme.colors.primary, marginTop: 2 },
-  creatorRole:  { fontSize: 13, color: theme.colors.textMuted, marginTop: 2 },
+  appName: { fontSize: 38, fontWeight: '800', color: '#fff', letterSpacing: -0.5 },
 
   section: {
     marginHorizontal: theme.spacing(2),
     marginTop: theme.spacing(3),
   },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: theme.colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: theme.spacing(1.5),
-  },
-  bodyText: {
-    fontSize: 15,
-    lineHeight: 24,
+  storyText: {
+    fontSize: 16,
+    lineHeight: 26,
     color: theme.colors.text,
     backgroundColor: theme.colors.surface,
     borderRadius: theme.radiusLg,
     padding: theme.spacing(2),
     ...theme.shadowSoft,
   },
+  storyTextSpacing: { marginTop: theme.spacing(1.5) },
 
-  techGrid: {
+  ctaSection: {
+    marginHorizontal: theme.spacing(2),
+    marginTop: theme.spacing(3),
+    gap: theme.spacing(1.25),
+  },
+  ctaPrimary: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: theme.spacing(1),
-  },
-  techCard: {
-    width: '48%',
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radiusLg,
-    padding: theme.spacing(1.75),
-    alignItems: 'flex-end',
-    gap: 4,
-    ...theme.shadowSoft,
-  },
-  techLabel: { fontSize: 13, fontWeight: '700', color: theme.colors.text },
-  techDesc:  { fontSize: 11, color: theme.colors.textMuted },
-
-  linkRow: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radiusLg,
-    padding: theme.spacing(2),
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing(1.5),
-    ...theme.shadowSoft,
-  },
-  linkIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: theme.radius,
-    backgroundColor: theme.colors.surfaceAlt,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: theme.spacing(1),
+    backgroundColor: theme.colors.accent,
+    paddingVertical: theme.spacing(2),
+    borderRadius: theme.radiusLg,
+    ...theme.shadow,
   },
-  linkBody:  { flex: 1 },
-  linkLabel: { fontSize: 15, fontWeight: '700', color: theme.colors.text },
-  linkSub:   { fontSize: 12, color: theme.colors.textMuted, marginTop: 2 },
+  ctaPrimaryText: { fontSize: 17, fontWeight: '800', color: theme.colors.accentDark },
+  ctaSecondaryRow: { flexDirection: 'row', gap: theme.spacing(1) },
+  ctaSecondary: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: theme.spacing(0.75),
+    backgroundColor: theme.colors.surface,
+    paddingVertical: theme.spacing(1.5),
+    borderRadius: theme.radiusLg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    ...theme.shadowSoft,
+  },
+  ctaSecondaryText: { fontSize: 13, fontWeight: '700', color: theme.colors.primary },
 
   adminBtn: {
     backgroundColor: theme.colors.primary,

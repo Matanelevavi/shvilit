@@ -56,14 +56,15 @@ function formatDate(ts: number) {
   return new Date(ts).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' });
 }
 
-type Tab = 'quiz' | 'tours' | 'videos' | 'board';
+// "לוח" (leaderboard) אינו טאב - הוא סוג אחר של תוכן (דירוג כלל-המשתמשים,
+// לא פריטים אישיים ששמרת) ומוצג כמקטע נפרד למטה בעמוד.
+type Tab = 'quiz' | 'tours' | 'videos';
 
 // הסדר קובע את התצוגה מימין לשמאל: שלושת סוגי התוכן שיוצרים לקראת טיול.
 const TABS: { key: Tab; icon: string; label: string }[] = [
-  { key: 'tours',  icon: 'headset-outline',      label: 'סיורים' },
+  { key: 'tours',  icon: 'headset-outline',      label: 'הדרכות' },
   { key: 'quiz',   icon: 'help-circle-outline', label: 'חידונים' },
   { key: 'videos', icon: 'videocam-outline',     label: 'סרטונים' },
-  { key: 'board',  icon: 'trophy-outline',        label: 'לוח' },
 ];
 
 function RankBar({ progress, nextName, pointsToNext }: { progress: number; nextName: string | null; pointsToNext: number }) {
@@ -92,8 +93,8 @@ export default function ProfileScreen() {
   const [quizHistory, setQuizHistory] = useState<QuizResult[]>([]);
   const [savedVideos, setSavedVideos] = useState<SavedVideo[]>([]);
   const [savedTours, setSavedTours] = useState<SavedTour[]>([]);
-  const validTabs: Tab[] = ['quiz', 'tours', 'videos', 'board'];
-  const initialTab: Tab = validTabs.includes(params.tab as Tab) ? (params.tab as Tab) : 'quiz';
+  const validTabs: Tab[] = ['quiz', 'tours', 'videos'];
+  const initialTab: Tab = validTabs.includes(params.tab as Tab) ? (params.tab as Tab) : 'tours';
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const [adminEnabled, setAdminEnabled] = useState(false);
 
@@ -178,7 +179,7 @@ export default function ProfileScreen() {
   };
 
   const deleteTour = (poiId: string, title: string) => {
-    showConfirm('מחיקת סיור', `למחוק את הסיור של "${title}"?`, 'מחק',
+    showConfirm('מחיקת הדרכה', `למחוק את ההדרכה של "${title}"?`, 'מחק',
       async () => { await removeSavedTour(poiId); load(); }, { destructive: true });
   };
 
@@ -230,7 +231,7 @@ export default function ProfileScreen() {
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
             <Text style={styles.statNum}>{savedTours.length}</Text>
-            <Text style={styles.statLabel}>סיורים</Text>
+            <Text style={styles.statLabel}>הדרכות</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
@@ -258,7 +259,7 @@ export default function ProfileScreen() {
       {activeTab === 'quiz' && (
         <View style={styles.section}>
           {quizHistory.length === 0 ? (
-            <EmptyState icon="help-circle-outline" text="עדיין לא השלמת חידון." hint="גלה מקום, פתח נקודת עניין ולחץ על חידון." />
+            <EmptyState icon="help-circle-outline" text="עדיין אין חידון שהושלם." hint="אפשר לגלות מקום, לפתוח נקודת עניין וללחוץ על חידון." />
           ) : quizHistory.map((r, i) => (
             <View key={i} style={styles.historyCard}>
               <View style={styles.historyLeft}>
@@ -281,7 +282,7 @@ export default function ProfileScreen() {
       {activeTab === 'tours' && (
         <View style={styles.section}>
           {savedTours.length === 0 ? (
-            <EmptyState icon="headset-outline" text="אין סיורי שמע שמורים." hint="צור סיור על מקום כלשהו ולחץ על סימן הסימנייה." />
+            <EmptyState icon="headset-outline" text="אין הדרכות שמע שמורות." hint="אפשר ליצור הדרכה על מקום כלשהו וללחוץ על סימן הסימנייה." />
           ) : savedTours.map((t, i) => (
             <View key={i} style={styles.itemCard}>
               <TouchableOpacity style={styles.itemCardMain} onPress={() => openTour(t)} activeOpacity={0.85}>
@@ -309,7 +310,7 @@ export default function ProfileScreen() {
       {activeTab === 'videos' && (
         <View style={styles.section}>
           {savedVideos.length === 0 ? (
-            <EmptyState icon="videocam-outline" text="אין סרטונים שמורים." hint='לאחר יצירת סרטון, לחץ על "שמור סרטון".' />
+            <EmptyState icon="videocam-outline" text="אין סרטונים שמורים." hint='לאחר יצירת סרטון, אפשר ללחוץ על "שמירת סרטון".' />
           ) : savedVideos.map((v, i) => (
             <View key={i} style={styles.itemCard}>
               <TouchableOpacity
@@ -335,29 +336,30 @@ export default function ProfileScreen() {
         </View>
       )}
 
-      {/* ─── Leaderboard ───────────────────────────────────── */}
-      {activeTab === 'board' && (
-        <View style={styles.section}>
-          <Text style={styles.boardNote}>
-            {cloudBoard.length > 0
-              ? 'לוח התוצאות של כל המטיילים בשבילית'
-              : 'התחבר עם Google כדי להתחרות מול מטיילים אחרים'}
-          </Text>
-          {leaderboard.map((player, i) => (
-            <View key={i} style={[styles.boardRow, player.isMe && styles.boardRowMe]}>
-              <Text style={[styles.boardRank, i < 3 && styles.boardRankTop]}>
-                {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
-              </Text>
-              <Text style={[styles.boardName, player.isMe && styles.boardNameMe]} numberOfLines={1}>
-                {player.name}{player.isMe ? ' (אתה)' : ''}
-              </Text>
-              <Text style={[styles.boardPoints, player.isMe && styles.boardPointsMe]}>
-                {player.points} נק'
-              </Text>
-            </View>
-          ))}
-        </View>
-      )}
+      {/* ─── Leaderboard - סוג אחר של תוכן מהטאבים למעלה: דירוג כלל
+          המשתמשים בשבילית, לא רשימה אישית ששמרת - לכן מקטע נפרד עם
+          כותרת והסבר, לא עוד טאב. ───────────────────────────────── */}
+      <View style={styles.boardSection}>
+        <Text style={styles.boardHeading}>לוח מובילים</Text>
+        <Text style={styles.boardNote}>
+          {cloudBoard.length > 0
+            ? 'דירוג כל מטיילי שבילית לפי נקודות שנצברו מהשלמת הדרכות וחידונים'
+            : 'התחברות עם Google מאפשרת הצטרפות לדירוג מול מטיילים אחרים'}
+        </Text>
+        {leaderboard.map((player, i) => (
+          <View key={i} style={[styles.boardRow, player.isMe && styles.boardRowMe]}>
+            <Text style={[styles.boardRank, i < 3 && styles.boardRankTop]}>
+              {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
+            </Text>
+            <Text style={[styles.boardName, player.isMe && styles.boardNameMe]} numberOfLines={1}>
+              {player.name}{player.isMe ? ' (את/ה)' : ''}
+            </Text>
+            <Text style={[styles.boardPoints, player.isMe && styles.boardPointsMe]}>
+              {player.points} נק'
+            </Text>
+          </View>
+        ))}
+      </View>
 
       {/* ─── Settings / more ───────────────────────────────── */}
       <View style={styles.menuSection}>
@@ -483,8 +485,13 @@ const styles = StyleSheet.create({
   itemCardTitle: { fontSize: 15, fontWeight: '700', color: theme.colors.text },
   itemCardMeta: { fontSize: 12, color: theme.colors.textMuted, marginTop: 2 },
 
-  // ─── Leaderboard
-  boardNote: { fontSize: 11, color: theme.colors.textMuted, marginBottom: theme.spacing(0.5) },
+  // ─── Leaderboard - מקטע נפרד מהטאבים, עם רקע מובחן ורווח מעליו.
+  boardSection: {
+    padding: theme.spacing(2), gap: theme.spacing(1),
+    marginTop: theme.spacing(1), backgroundColor: theme.colors.surfaceAlt,
+  },
+  boardHeading: { fontSize: 17, fontWeight: '800', color: theme.colors.primary },
+  boardNote: { fontSize: 11, color: theme.colors.textMuted, marginTop: -theme.spacing(0.5), marginBottom: theme.spacing(0.5) },
   boardRow: {
     flexDirection: 'row', alignItems: 'center', paddingVertical: theme.spacing(1.25),
     paddingHorizontal: theme.spacing(1.5), borderRadius: theme.radius,

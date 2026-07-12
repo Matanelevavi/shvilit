@@ -88,7 +88,7 @@ export default function PoiScreen() {
       <View style={styles.center}>
         <Ionicons name="map-outline" size={48} color={theme.colors.border} />
         <Text style={styles.muted}>נקודת העניין לא נמצאה.</Text>
-        <Text style={styles.mutedSub}>חזור למפה ובחר מקום.</Text>
+        <Text style={styles.mutedSub}>אפשר לחזור למפה ולבחור מקום.</Text>
       </View>
     );
   }
@@ -106,7 +106,7 @@ export default function PoiScreen() {
       trackEvent('tour_generated', { poiId: poi.id, minutes, style });
       router.push(`/tour/${poi.id}`);
     } catch (err) {
-      showAlert('יצירת הסיור נכשלה', err instanceof Error ? err.message : 'שגיאה');
+      showAlert('יצירת ההדרכה נכשלה', err instanceof Error ? err.message : 'שגיאה');
     } finally {
       setBusy(false);
     }
@@ -179,10 +179,10 @@ export default function PoiScreen() {
 
       {/* Tour builder */}
       <View style={styles.builderCard}>
-        <Text style={styles.builderTitle}>בנה את הסיור שלך</Text>
+        <Text style={styles.builderTitle}>בניית ההדרכה שלך</Text>
 
         {/* Duration */}
-        <Text style={styles.builderLabel}>משך הסיור</Text>
+        <Text style={styles.builderLabel}>משך ההדרכה</Text>
         <View style={styles.lengthRow}>
           {(TOUR_LENGTHS as TourLengthMinutes[]).map((m) => {
             const meta = LENGTH_META[m];
@@ -203,7 +203,7 @@ export default function PoiScreen() {
         </View>
 
         {/* Style */}
-        <Text style={styles.builderLabel}>סגנון הסיור</Text>
+        <Text style={styles.builderLabel}>סגנון ההדרכה</Text>
         <View style={styles.styleGrid}>
           {(TOUR_STYLES as TourStyle[]).map((s) => {
             const meta = STYLE_META[s];
@@ -234,7 +234,7 @@ export default function PoiScreen() {
         <View style={styles.previewPill}>
           <Ionicons name="information-circle-outline" size={15} color={theme.colors.primaryLight} />
           <Text style={styles.previewText}>
-            סיור {selectedStyleMeta.emoji} {TOUR_STYLE_LABELS[style]} · {selectedLengthMeta.label} · {selectedLengthMeta.words}
+            הדרכה {selectedStyleMeta.emoji} {TOUR_STYLE_LABELS[style]} · {selectedLengthMeta.label} · {selectedLengthMeta.words}
           </Text>
         </View>
       </View>
@@ -252,12 +252,12 @@ export default function PoiScreen() {
             {busy ? (
               <>
                 <ActivityIndicator color={theme.colors.accentDark} />
-                <Text style={styles.ctaPrimaryText}>יוצר סיור...</Text>
+                <Text style={styles.ctaPrimaryText}>יוצרים הדרכה...</Text>
               </>
             ) : (
               <>
                 <Ionicons name="headset" size={22} color={theme.colors.accentDark} />
-                <Text style={styles.ctaPrimaryText}>סיור שמע</Text>
+                <Text style={styles.ctaPrimaryText}>הדרכת שמע</Text>
                 <View style={styles.ctaSubLabel}>
                   <Text style={styles.ctaSubLabelText}>AI · עברית</Text>
                 </View>
@@ -275,7 +275,7 @@ export default function PoiScreen() {
             activeOpacity={0.88}
           >
             <Ionicons name="videocam-outline" size={20} color={theme.colors.primary} />
-            <Text style={styles.ctaSecondaryText}>סיור וידאו</Text>
+            <Text style={styles.ctaSecondaryText}>הדרכת וידאו</Text>
           </TouchableOpacity>
 
           <TouchableOpacity

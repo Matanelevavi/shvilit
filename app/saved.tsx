@@ -59,8 +59,8 @@ export default function SavedScreen() {
     return (
       <View style={styles.empty}>
         <Ionicons name="bookmark-outline" size={56} color={theme.colors.primaryLight} />
-        <Text style={styles.emptyText}>אין סיורים שמורים עדיין.</Text>
-        <Text style={styles.emptyHint}>צור סיור והקש על סימן הסימנייה כדי לשמור אותו לכאן.</Text>
+        <Text style={styles.emptyText}>אין הדרכות שמורות עדיין.</Text>
+        <Text style={styles.emptyHint}>כדי לשמור הדרכה לכאן, אפשר ליצור אחת וללחוץ על סימן הסימנייה.</Text>
       </View>
     );
   }
