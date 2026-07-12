@@ -1,5 +1,6 @@
 """שלב 2: יצירת תסריט הסיור באמצעות Gemini API (עם retry ו-fallback בין מודלים)."""
 import asyncio
+import json
 import re
 
 import httpx
@@ -43,6 +44,14 @@ def _build_prompt(location: str, duration_minutes: int, style: str) -> str:
             "5. עברית תקנית וזורמת, מתאימה להקראה קולית רציפה.",
             "6. אסור לכלול הוראות בימוי, קריינות או אווירה - לא בסוגריים ולא בכל צורה",
             "   אחרת (למשל: '(קול שקט ודרמטי)'). רק הטקסט המוקרא עצמו.",
+            "7. אל תחזור על עובדה, רעיון או תיאור שכבר הופיעו קודם בתסריט. כל פסקה",
+            "   חייבת להוסיף מידע חדש שלא נאמר. אם אין עוד מה לחדש - העמק בפרטים",
+            "   ובסיפורים במקום למחזר ניסוחים.",
+            "8. הימנע ממילות קישור וקלישאות ריקות: 'כפי שציינו', 'כאמור', 'כמו כן',",
+            "   'יתרה מכך', 'אין ספק ש', 'מקום מרתק', 'לא לחינם'. עבור ישירות לתוכן -",
+            "   כל משפט צריך לשאת מידע או סיפור, לא מילוי.",
+            "9. פתח ישר בסיפור או בעובדה שמושכת - בלי פתיחות גנריות. פנה למאזינים",
+            "   בלשון רבים ('שימו לב', 'תוכלו לראות') - היא ניטרלית ומתאימה לכולם.",
             "",
             "כתוב כעת רק את תסריט הסיור עצמו:",
         ]
@@ -137,6 +146,66 @@ async def generate_script(location: str, duration_minutes: int, style: str) -> s
                 break  # שגיאה אחרת -> ננסה מודל הבא
             # מיצינו את הניסיונות למודל הזה -> עוברים למודל הבא.
     raise RuntimeError(f"Gemini עמוס כרגע - כל המודלים עסוקים. נסה שוב בעוד דקה. (פרטים: {last_err})")
+
+
+async def generate_highlights(location: str) -> list[dict]:
+    """4-5 נקודות מרכזיות על מקום: [{emoji, text}, ...] להצגה במסך המקום.
+
+    עוזר קוגניטיבית להבין את המקום במבט-על לפני קריאת התוכן המלא.
+    כשל מחזיר רשימה ריקה - המסך פשוט לא יציג את הקוביה.
+    """
+    if not GEMINI_API_KEY or not location.strip():
+        return []
+    prompt = "\n".join(
+        [
+            f'צור 4-5 נקודות מרכזיות על "{location}" (אתר/מקום בישראל) עבור מטיילים.',
+            "",
+            "חוקים:",
+            "1. כל נקודה: עובדה אחת מעניינת וספציפית, 12-25 מילים, עברית תקנית.",
+            "2. הסתמך רק על ידע עובדתי אמין. אל תמציא תאריכים או פרטים.",
+            "3. גוון בין תחומים: היסטוריה, טבע, גיאולוגיה, ארכיאולוגיה, תרבות.",
+            "4. לכל נקודה בחר אמוג'י אחד שמתאים לתוכן שלה.",
+            "",
+            'החזר JSON בלבד במבנה: [{"emoji": "🏛️", "text": "..."}]',
+        ]
+    )
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": 0.4,
+            "maxOutputTokens": 2048,
+            "responseMimeType": "application/json",
+        },
+    }
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            for model in MODELS:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+                gen_payload = dict(payload)
+                if model.startswith("gemini-2.5"):
+                    gen_payload["generationConfig"] = {
+                        **payload["generationConfig"],
+                        "thinkingConfig": {"thinkingBudget": 0},
+                    }
+                resp = await client.post(url, params={"key": GEMINI_API_KEY}, json=gen_payload)
+                if resp.status_code != 200:
+                    continue
+                try:
+                    items = json.loads(_extract(resp.json()))
+                except (json.JSONDecodeError, TypeError):
+                    continue
+                if not isinstance(items, list):
+                    continue
+                highlights = [
+                    {"emoji": str(it.get("emoji", "📍")).strip() or "📍", "text": str(it["text"]).strip()}
+                    for it in items
+                    if isinstance(it, dict) and str(it.get("text", "")).strip()
+                ]
+                if highlights:
+                    return highlights[:5]
+    except Exception:  # noqa: BLE001
+        pass
+    return []
 
 
 async def generate_keywords(script: str) -> list[str]:

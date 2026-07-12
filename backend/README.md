@@ -14,8 +14,9 @@ pinned: false
 Gemini (תסריט) → edge-tts (קול עברי) → Wikipedia (תמונות) → FFmpeg (וידאו עם Ken Burns + fade).
 תוצאות נשמרות ב-cache (אפס עבודה כפולה).
 
-> שלב מקומי: cache ב-SQLite ואחסון וידאו מקומי. סכמת Supabase מצורפת ב-`supabase_schema.sql`
-> להחלפה עתידית כשיהיה service_role key.
+> קאש תוכן טקסטואלי (תסריטים, נקודות מרכזיות, חידונים) נשמר ב-**Supabase** -
+> קבוע, שורד rebuild של ה-Space. מטא-דאטה של וידאו וקובצי מדיה נשארים על
+> `PERSIST_DIR` (HF Storage Bucket). ראה "הגדרת הקאש הקבוע" למטה.
 
 ## דרישות מוקדמות
 - Python 3.11+ (מותקן: 3.13)
@@ -58,6 +59,26 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 4. **Images** (Wikipedia, fallback Unsplash אם יש מפתח) - `app/images.py`
 5. **Video** (FFmpeg: קליפ Ken Burns עצמאי לכל תמונה + concat + מיזוג אודיו) - `app/video.py`
 6. **Store + deliver** (מקומי תחת `/videos`, עדכון cache, ניקוי temp) - `app/pipeline.py`
+
+## הגדרת הקאש הקבוע (Supabase)
+
+תסריט/חידון/נקודות שנוצרו פעם אחת מוגשים לכל המשתמשים מיידית - בלי המתנה
+ל-Gemini ובלי טוקנים. ההפעלה (חד-פעמית):
+
+1. להריץ את `supabase/migrations/0005_script_cache.sql` ב-SQL Editor של Supabase.
+2. ב-HuggingFace Space: **Settings -> Variables and secrets** ולהוסיף:
+   - `SUPABASE_URL` = כתובת הפרויקט (https://xxxx.supabase.co)
+   - `SUPABASE_SERVICE_KEY` = ה-service_role key (**Project Settings -> API**). סוד!
+3. בלי המשתנים האלה הקאש פשוט כבוי והשירות עובד כרגיל.
+
+שיפור פרומפט? להעלות את `PROMPT_VERSION` ב-`app/config.py` - רשומות ישנות
+מפסיקות להיות מוגשות ותוכן חדש ואיכותי נוצר במקומן.
+
+## API נוספים
+- `POST /generate-script` - `{location, minutes, style}` -> `{script, cache_hit}`
+- `POST /place-highlights` - `{location}` -> `{highlights: [{emoji, text}], cache_hit}`
+- `POST /generate-quiz` - `{location, count}` -> `{questions}`
+- `POST /generate-audio` - `{text, style}` -> `{audio_url}`
 
 ## חיבור לאפליקציית שבילית
 האפליקציה (Expo/Web) תקרא ל-`POST /generate-tour` ותעשה polling ל-`GET /tour/{id}`,

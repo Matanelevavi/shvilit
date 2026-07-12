@@ -9,12 +9,12 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from . import cache
-from .config import AUDIO_DIR, GEMINI_API_KEY, PUBLIC_BASE_URL, STORAGE_DIR
+from . import cache, supacache
+from .config import AUDIO_DIR, GEMINI_API_KEY, PROMPT_VERSION, PUBLIC_BASE_URL, STORAGE_DIR
 from .models import GenerateTourRequest, TourStatus
 from .pipeline import run_pipeline
 from .quiz_gen import generate_quiz
-from .script_gen import generate_script
+from .script_gen import generate_highlights, generate_script
 from .tts import synthesize
 
 app = FastAPI(title="Shvilit Video Tour API", version="1.0.0")
@@ -132,19 +132,96 @@ async def generate_audio_endpoint(payload: dict):
     return {"audio_url": url}
 
 
+# נעילה פר שילוב (מקום, אורך, סגנון) - בקשות תסריט זהות במקביל
+# יחלקו יצירה אחת של Gemini במקום לשרוף טוקנים פעמיים.
+_script_locks: dict[str, asyncio.Lock] = {}
+
+
+def _script_lock(key: str) -> asyncio.Lock:
+    lock = _script_locks.get(key)
+    if lock is None:
+        lock = asyncio.Lock()
+        _script_locks[key] = lock
+    return lock
+
+
 @app.post("/generate-script")
 async def generate_script_endpoint(payload: dict):
-    """תסריט סיור שמע בעברית (Gemini). משמש את מסך סיור השמע באפליקציה."""
+    """תסריט הדרכה בעברית (Gemini) עם קאש קבוע ב-Supabase.
+
+    תסריט שנוצר פעם אחת מוגש לכל המשתמשים הבאים מיידית - בלי המתנה
+    ל-Gemini ובלי טוקנים. cache_hit בתשובה משמש את האנליטיקס בצד הלקוח.
+    """
     location = (payload or {}).get("location", "").strip()
     minutes = int((payload or {}).get("minutes", 5))
     style = (payload or {}).get("style", "historical")
     if not location:
         raise HTTPException(status_code=400, detail="missing location")
+
+    cached = await supacache.get_script(location, minutes, style, PROMPT_VERSION)
+    if cached:
+        return {"script": cached, "cache_hit": True}
+
+    key = f"{supacache.normalize(location)}|{minutes}|{style}"
+    async with _script_lock(key):
+        # בדיקה חוזרת אחרי קבלת הנעילה - אולי בקשה מקבילה כבר יצרה.
+        cached = await supacache.get_script(location, minutes, style, PROMPT_VERSION)
+        if cached:
+            return {"script": cached, "cache_hit": True}
+        try:
+            script = await generate_script(location, minutes, style)
+        except Exception as exc:  # noqa: BLE001
+            raise HTTPException(status_code=502, detail=str(exc))
+        await supacache.save_script(location, minutes, style, PROMPT_VERSION, script)
+    return {"script": script, "cache_hit": False}
+
+
+_highlights_locks: dict[str, asyncio.Lock] = {}
+
+
+def _highlights_lock(key: str) -> asyncio.Lock:
+    lock = _highlights_locks.get(key)
+    if lock is None:
+        lock = asyncio.Lock()
+        _highlights_locks[key] = lock
+    return lock
+
+
+@app.post("/place-highlights")
+async def place_highlights_endpoint(payload: dict):
+    """4-5 נקודות מרכזיות על מקום ([{emoji, text}]) להצגה במסך המקום.
+
+    נשמרות בקאש פר מקום - קריאת Gemini אחת לכל מקום, לתמיד.
+    כשל מחזיר רשימה ריקה (לא שגיאה) - המסך פשוט לא יציג את הקוביה.
+    """
+    location = (payload or {}).get("location", "").strip()
+    if not location:
+        raise HTTPException(status_code=400, detail="missing location")
+
+    cached = await supacache.get_highlights(location, PROMPT_VERSION)
+    if cached:
+        return {"highlights": cached, "cache_hit": True}
+
+    async with _highlights_lock(supacache.normalize(location)):
+        cached = await supacache.get_highlights(location, PROMPT_VERSION)
+        if cached:
+            return {"highlights": cached, "cache_hit": True}
+        highlights = await generate_highlights(location)
+        if highlights:
+            await supacache.save_highlights(location, PROMPT_VERSION, highlights)
+    return {"highlights": highlights, "cache_hit": False}
+
+
+async def _load_cached_quiz(location: str) -> list | None:
+    """Supabase (קבוע) קודם, SQLite מקומי כ-fallback לרשומות ישנות/offline."""
+    questions = await supacache.get_quiz(location)
+    if questions:
+        return questions
     try:
-        script = await generate_script(location, minutes, style)
-    except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=502, detail=str(exc))
-    return {"script": script}
+        raw = cache.get_quiz(location)
+        return json.loads(raw) if raw else None
+    except Exception:  # noqa: BLE001
+        return None  # cache פגום -> נייצר מחדש
 
 
 @app.post("/generate-quiz")
@@ -154,33 +231,23 @@ async def generate_quiz_endpoint(payload: dict):
     if not location:
         raise HTTPException(status_code=400, detail="missing location")
 
-    try:
-        cached = cache.get_quiz(location)
-    except Exception:  # noqa: BLE001
-        cached = None
+    cached = await _load_cached_quiz(location)
     if cached:
-        try:
-            return {"questions": json.loads(cached)}
-        except Exception:  # noqa: BLE001
-            cached = None  # cache פגום -> נייצר מחדש
+        return {"questions": cached}
 
     async with _quiz_lock(location):
         # בדיקה חוזרת אחרי קבלת הנעילה - אולי בקשה אחרת כבר יצרה.
-        try:
-            cached = cache.get_quiz(location)
-        except Exception:  # noqa: BLE001
-            cached = None
+        cached = await _load_cached_quiz(location)
         if cached:
-            try:
-                return {"questions": json.loads(cached)}
-            except Exception:  # noqa: BLE001
-                cached = None
+            return {"questions": cached}
         try:
             questions = await generate_quiz(location, count)
         except Exception as exc:  # noqa: BLE001
             raise HTTPException(status_code=502, detail=str(exc))
+        # כתיבה לשני הקאשים - כשל בכתיבה לא קריטי, השאלות כבר בזיכרון.
+        await supacache.save_quiz(location, questions)
         try:
             cache.save_quiz(location, json.dumps(questions, ensure_ascii=False))
         except Exception:  # noqa: BLE001
-            pass  # cache write fail -> לא קריטי, השאלות כבר בזיכרון
+            pass
         return {"questions": questions}

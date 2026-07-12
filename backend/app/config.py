@@ -28,6 +28,16 @@ TEMP_DIR.mkdir(parents=True, exist_ok=True)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
+# קאש תוכן קבוע ב-Supabase (תסריטים/נקודות מרכזיות/חידונים) - ראה supacache.py.
+# service role key, לא ה-anon key: הטבלאות סגורות לציבור ב-RLS.
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "")
+
+# גרסת הפרומפט של תוכן שנשמר בקאש. כל שיפור מהותי בפרומפטים של
+# script_gen.py חייב להעלות את המספר - אחרת משתמשים ימשיכו לקבל
+# מהקאש תוכן שנוצר מהפרומפט הישן לנצח.
+PROMPT_VERSION = 2
+
 _raw_base_url = os.getenv("PUBLIC_BASE_URL", "http://localhost:8000")
 # מנקה מקרה שהמשתמש הקליד "KEY = VALUE" בשדה הערך (במקום רק ה-URL).
 if "=" in _raw_base_url and not _raw_base_url.lstrip().startswith("http"):
