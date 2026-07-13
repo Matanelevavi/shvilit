@@ -91,7 +91,8 @@ function AuthGate() {
     const onLogin    = segments[0] === 'login';
     const onCallback = segments[0] === 'auth'; // /auth/callback - לא לנתב ממנו
     const onPrivacy  = segments[0] === 'privacy'; // ציבורי - נדרש לאימות Google OAuth
-    if (!isAuthed && !onLogin && !onCallback && !onPrivacy) {
+    const onAbout    = segments[0] === 'about'; // ציבורי - דף תיאור האפליקציה ל-Google OAuth branding verification
+    if (!isAuthed && !onLogin && !onCallback && !onPrivacy && !onAbout) {
       router.replace('/login');
     } else if (isAuthed && onLogin) {
       router.replace('/');
