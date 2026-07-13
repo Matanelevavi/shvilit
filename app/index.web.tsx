@@ -20,9 +20,10 @@ import { useAuth } from '@/auth/AuthProvider';
 import { useLocalProfile } from '@/auth/LocalProfile';
 import type { Coordinate, Poi } from '@/domain/types';
 import { theme } from '@/ui/theme';
-import { showConfirm } from '@/ui/dialogs';
 import { wikiImage } from '@/ui/wikiImage';
 import { trackEvent, regionFromCoordinate } from '@/state/analytics';
+import { notifyTourReady } from '@/state/notify';
+import { TourReadyModal } from '@/ui/TourReadyModal';
 
 const DEFAULT_CENTER: Coordinate = { latitude: 31.7767, longitude: 35.2345 };
 const SUGGESTIONS = [
@@ -53,6 +54,7 @@ export default function MapScreenWeb() {
   const [searched, setSearched] = useState(false);
   const [resultsSource, setResultsSource] = useState<'search' | 'nearby'>('search');
   const [points, setPoints] = useState(0);
+  const [readyVideo, setReadyVideo] = useState<{ location: string; url: string; minutes: number; style: string } | null>(null);
 
   useFocusEffect(useCallback(() => {
     getPoints().then(setPoints);
@@ -66,13 +68,8 @@ export default function MapScreenWeb() {
           if (s.status === 'completed' && s.video_url) {
             await removePendingVideo(p.location);
             setPoints(await getPoints());
-            showConfirm(
-              '✅ הסרטון מוכן!',
-              `סרטון ההדרכה של "${p.location}" מוכן לצפייה.`,
-              'לצפייה',
-              () => router.push(`/video/${encodeURIComponent(p.location)}?savedUrl=${encodeURIComponent(s.video_url!)}&minutes=${p.minutes}&style=${p.style}`),
-              { cancelText: 'אחר כך' },
-            );
+            notifyTourReady(p.location);
+            setReadyVideo({ location: p.location, url: s.video_url, minutes: p.minutes, style: p.style });
           } else if (s.status === 'failed') {
             await removePendingVideo(p.location);
           }
@@ -149,6 +146,7 @@ export default function MapScreenWeb() {
   const rank = getRank(points);
 
   return (
+    <>
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Stack.Screen options={{ headerShown: false }} />
 
@@ -300,6 +298,18 @@ export default function MapScreenWeb() {
         )}
       </View>
     </ScrollView>
+    {readyVideo && (
+      <TourReadyModal
+        location={readyVideo.location}
+        onView={() => {
+          const { location, url, minutes, style } = readyVideo;
+          setReadyVideo(null);
+          router.push(`/video/${encodeURIComponent(location)}?savedUrl=${encodeURIComponent(url)}&minutes=${minutes}&style=${style}`);
+        }}
+        onDismiss={() => setReadyVideo(null)}
+      />
+    )}
+    </>
   );
 }
 

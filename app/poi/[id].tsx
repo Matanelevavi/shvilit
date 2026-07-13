@@ -26,6 +26,7 @@ import {
 import { theme } from '@/ui/theme';
 import { showAlert } from '@/ui/dialogs';
 import { wikiImage } from '@/ui/wikiImage';
+import { requestNotificationPermission } from '@/state/notify';
 
 const STYLE_META: Record<TourStyle, { emoji: string; desc: string; color: string }> = {
   historical: { emoji: '🏛',  desc: 'עובדות היסטוריות ורקע תרבותי', color: '#7c5c2e' },
@@ -120,6 +121,9 @@ export default function PoiScreen() {
 
   const onVideo = () => {
     trackEvent('video_requested', { location: poi.title, minutes, style });
+    // מבקשים הרשאת התראות כאן (בתוך user gesture) כדי שברגע שהסרטון יהיה
+    // מוכן - אולי כמה מסכים אחר כך - כבר אפשר להתריע עליו במערכת.
+    requestNotificationPermission();
     router.push(`/video/${poi.id}?minutes=${minutes}&style=${style}`);
   };
 

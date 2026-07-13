@@ -19,10 +19,12 @@ import { useAuth } from '@/auth/AuthProvider';
 import { useLocalProfile } from '@/auth/LocalProfile';
 import type { Coordinate, Poi } from '@/domain/types';
 import { theme } from '@/ui/theme';
-import { showAlert, showConfirm } from '@/ui/dialogs';
+import { showAlert } from '@/ui/dialogs';
 import { wikiImage } from '@/ui/wikiImage';
 import { getPoints, getPendingVideos, removePendingVideo } from '@/state/gameState';
 import { getVideoTour } from '@/services/video/videoTourApi';
+import { notifyTourReady } from '@/state/notify';
+import { TourReadyModal } from '@/ui/TourReadyModal';
 
 const DEFAULT_REGION: Region = {
   latitude: 31.7767,
@@ -47,6 +49,7 @@ export default function MapScreen() {
   const [tapped, setTapped] = useState<Coordinate | null>(null);
   const [query, setQuery] = useState('');
   const [points, setPoints] = useState(0);
+  const [readyVideo, setReadyVideo] = useState<{ location: string; url: string; minutes: number; style: string } | null>(null);
 
   // טוען נקודות + בודק pending videos בכל פעם שהמסך מקבל פוקוס
   useFocusEffect(useCallback(() => {
@@ -61,13 +64,8 @@ export default function MapScreen() {
           if (s.status === 'completed' && s.video_url) {
             await removePendingVideo(p.location);
             setPoints(await getPoints()); // רענון
-            showConfirm(
-              '✅ הסרטון מוכן!',
-              `סרטון ההדרכה של "${p.location}" מוכן לצפייה.`,
-              'לצפייה',
-              () => router.push(`/video/${encodeURIComponent(p.location)}?savedUrl=${encodeURIComponent(s.video_url!)}&minutes=${p.minutes}&style=${p.style}`),
-              { cancelText: 'אחר כך' },
-            );
+            notifyTourReady(p.location);
+            setReadyVideo({ location: p.location, url: s.video_url, minutes: p.minutes, style: p.style });
           } else if (s.status === 'failed') {
             await removePendingVideo(p.location);
           }
@@ -283,6 +281,17 @@ export default function MapScreen() {
           <Ionicons name="log-out-outline" size={22} color={theme.colors.primary} />
         </TouchableOpacity>
       </View>
+      {readyVideo && (
+        <TourReadyModal
+          location={readyVideo.location}
+          onView={() => {
+            const { location, url, minutes, style } = readyVideo;
+            setReadyVideo(null);
+            router.push(`/video/${encodeURIComponent(location)}?savedUrl=${encodeURIComponent(url)}&minutes=${minutes}&style=${style}`);
+          }}
+          onDismiss={() => setReadyVideo(null)}
+        />
+      )}
     </View>
   );
 }

@@ -47,7 +47,14 @@
           "backgroundColor": "#0f3d2e"
         }
       ],
-      "expo-video"
+      "expo-video",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/adaptive-icon.png",
+          "color": "#0f3d2e"
+        }
+      ]
     ],
     "web": {
       "output": "single",
