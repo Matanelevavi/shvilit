@@ -16,7 +16,6 @@ import { getPoiProvider } from '@/services/factory';
 import { cachePois } from '@/state/store';
 import { getPoints, getRank, getPendingVideos, removePendingVideo } from '@/state/gameState';
 import { getVideoTour } from '@/services/video/videoTourApi';
-import { useAuth } from '@/auth/AuthProvider';
 import { useLocalProfile } from '@/auth/LocalProfile';
 import type { Coordinate, Poi } from '@/domain/types';
 import { theme } from '@/ui/theme';
@@ -37,15 +36,7 @@ const SUGGESTIONS = [
 
 export default function MapScreenWeb() {
   const router = useRouter();
-  const { signOut } = useAuth();
-  const { profile, clearProfile } = useLocalProfile();
-  // תמיד מנקים את שני מקורות ההתחברות האפשריים - לא רק לפי config.hasSupabase
-  // (שתמיד true כאן), אחרת אורח עם פרופיל מקומי לא היה יכול לצאת בכלל:
-  // signOut() לא עושה כלום כשאין session, אז clearProfile() חייב לרוץ תמיד.
-  const onLogout = async () => {
-    await clearProfile();
-    await signOut();
-  };
+  const { profile } = useLocalProfile();
 
   const [pois, setPois] = useState<Poi[]>([]);
   const [loading, setLoading] = useState(false);
@@ -182,11 +173,6 @@ export default function MapScreenWeb() {
               activeOpacity={0.85}
             >
               <Ionicons name="person-circle-outline" size={26} color="#d7e6dd" />
-            </TouchableOpacity>
-
-            {/* Logout */}
-            <TouchableOpacity style={styles.headerBtn} onPress={onLogout} hitSlop={8} activeOpacity={0.85}>
-              <Ionicons name="log-out-outline" size={22} color="#d7e6dd" />
             </TouchableOpacity>
           </View>
         </View>
