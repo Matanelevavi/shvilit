@@ -343,6 +343,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing(2),
     fontSize: 16,
     color: theme.colors.text,
+    textAlign: 'right',
   },
   searchBtn: {
     width: 52, height: 52,
