@@ -67,11 +67,32 @@ const TABS: { key: Tab; icon: string; label: string }[] = [
   { key: 'videos', icon: 'videocam-outline',     label: 'סרטונים' },
 ];
 
-function RankBar({ progress, nextName, pointsToNext }: { progress: number; nextName: string | null; pointsToNext: number }) {
+// "שביל" ההתקדמות: לא עוד פס אחיד, אלא הדמיה של המסלול עצמו - נקודות ציון
+// לכל דרגה לאורך השביל, וסמן (📍) שמתקדם עליו לפי סך הנקודות שנצברו.
+function RankBar({ points, nextName, pointsToNext }: { points: number; nextName: string | null; pointsToNext: number }) {
+  const maxPoints = TIERS[TIERS.length - 1].min;
+  const overallProgress = Math.max(0, Math.min(1, points / maxPoints));
   return (
     <View style={styles.rankBarWrap}>
-      <View style={styles.rankBarTrack}>
-        <View style={[styles.rankBarFill, { width: `${Math.round(progress * 100)}%` as any }]} />
+      <View style={styles.trailTrack}>
+        <View style={[styles.trailFill, { width: `${overallProgress * 100}%` as any }]} />
+        {TIERS.map((t, i) => {
+          if (i === 0) return null; // תחילת השביל - אין צורך בנקודת ציון ב-0
+          const pct = (t.min / maxPoints) * 100;
+          return (
+            <View
+              key={i}
+              style={[
+                styles.trailDot,
+                points >= t.min && styles.trailDotActive,
+                { left: `${pct}%` as any },
+              ]}
+            />
+          );
+        })}
+        <View style={[styles.trailMarker, { left: `${overallProgress * 100}%` as any }]}>
+          <Text style={styles.trailMarkerEmoji}>📍</Text>
+        </View>
       </View>
       {nextName ? (
         <Text style={styles.rankBarLabel}>עוד {pointsToNext} נקודות לתואר "{nextName}"</Text>
@@ -209,7 +230,7 @@ export default function ProfileScreen() {
             <Text style={styles.pointsLabel}>נקודות</Text>
           </View>
         </View>
-        <RankBar progress={rank.progress} nextName={rank.nextName} pointsToNext={rank.pointsToNext} />
+        <RankBar points={points} nextName={rank.nextName} pointsToNext={rank.pointsToNext} />
 
         {/* Tier legend */}
         <View style={styles.tierRow}>
@@ -424,10 +445,17 @@ const styles = StyleSheet.create({
   pointsNum: { fontSize: 24, fontWeight: '900', color: theme.colors.accentDark },
   pointsLabel: { fontSize: 10, color: theme.colors.accentDark, fontWeight: '600' },
 
-  rankBarWrap: { marginTop: theme.spacing(1.5) },
-  rankBarTrack: { height: 6, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 3, overflow: 'hidden' },
-  rankBarFill: { height: '100%', backgroundColor: theme.colors.accent, borderRadius: 3 },
-  rankBarLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 4 },
+  rankBarWrap: { marginTop: theme.spacing(2.5) },
+  trailTrack: { height: 8, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 4 },
+  trailFill: { height: '100%', backgroundColor: theme.colors.accent, borderRadius: 4 },
+  trailDot: {
+    position: 'absolute', top: -3, width: 14, height: 14, borderRadius: 7, marginLeft: -7,
+    backgroundColor: theme.colors.primary, borderWidth: 2, borderColor: 'rgba(255,255,255,0.35)',
+  },
+  trailDotActive: { backgroundColor: theme.colors.accent, borderColor: '#fff' },
+  trailMarker: { position: 'absolute', top: -23, marginLeft: -12, width: 24, alignItems: 'center' },
+  trailMarkerEmoji: { fontSize: 22 },
+  rankBarLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 8 },
 
   tierRow: { flexDirection: 'row', marginTop: theme.spacing(1.5), gap: 4 },
   tierItem: { flex: 1, alignItems: 'center', opacity: 0.45 },

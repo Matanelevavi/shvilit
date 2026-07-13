@@ -39,7 +39,7 @@ export class BackendLLMProvider implements LLMProvider {
         text,
         wordCount: countWords(text),
         source: 'gemini',
-        attribution: 'נכתב על ידי Gemini',
+        attribution: 'הופק על ידי שבילית · מבוסס על ויקיפדיה',
         cacheHit: data.cache_hit,
       };
     } catch {

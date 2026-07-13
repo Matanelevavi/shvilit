@@ -3,7 +3,7 @@ import type { TTSProvider, TtsCallbacks } from './TTSProvider';
 import { ExpoSpeechTTS } from './ExpoSpeechTTS';
 
 /**
- * TTS מבוסס שרת ל-web: הטקסט נשלח ל-backend (/generate-audio, edge-tts)
+ * TTS מבוסס שרת ל-web: הטקסט נשלח ל-backend (/generate-audio, Gemini TTS)
  * וחוזר כקובץ mp3 שמתנגן ב-HTMLAudioElement.
  *
  * למה לא speechSynthesis של הדפדפן? בהרבה טלפונים (בעיקר Android) אין

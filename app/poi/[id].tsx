@@ -256,7 +256,9 @@ export default function PoiScreen() {
 
       {/* CTAs */}
       <View style={styles.ctaSection}>
-        {/* Primary: Audio tour */}
+        {/* Primary: הדרכה - מכילה גם טקסט קריא וגם הקראה, לא רק שמע.
+            הכיתוב/אייקון כאן צריכים להבהיר את זה - בלי זה משתמשים שמעדיפים
+            לקרוא בעצמם חושבים שאין להם אפשרות ברירת מחדל אחרת מהמסך הזה. */}
         <TouchableOpacity
           style={[styles.ctaPrimary, busy && styles.ctaDisabled]}
           onPress={onCreate}
@@ -272,9 +274,9 @@ export default function PoiScreen() {
             ) : (
               <>
                 <Ionicons name="headset" size={22} color={theme.colors.accentDark} />
-                <Text style={styles.ctaPrimaryText}>הדרכת שמע</Text>
+                <Text style={styles.ctaPrimaryText}>הדרכה</Text>
                 <View style={styles.ctaSubLabel}>
-                  <Text style={styles.ctaSubLabelText}>AI · עברית</Text>
+                  <Text style={styles.ctaSubLabelText}>טקסט + הקראה</Text>
                 </View>
               </>
             )}

@@ -199,11 +199,23 @@ export default function TourScreen() {
         </ScrollView>
       </View>
 
-      <TouchableOpacity style={styles.profileLink} onPress={() => router.push('/profile')} activeOpacity={0.85}>
-        <Ionicons name="trophy-outline" size={16} color={theme.colors.primaryLight} />
-        <Text style={styles.profileLinkText}>האזור האישי שלי</Text>
-        <Ionicons name="chevron-back" size={14} color={theme.colors.primaryLight} />
-      </TouchableOpacity>
+      {/* שמירה בולטת לצד "האזור האישי" - האייקון הצף על ה-hero קטן מדי ונשכח
+          מהר; כפתור עם תווית כאן מקשה פחות לפספס, כמו במסך הווידאו. */}
+      <View style={styles.actionsRow}>
+        <TouchableOpacity
+          style={[styles.saveWideBtn, saved && styles.saveWideBtnDone]}
+          onPress={toggleSave}
+          activeOpacity={0.85}
+        >
+          <Ionicons name={saved ? 'bookmark' : 'bookmark-outline'} size={18} color={theme.colors.primary} />
+          <Text style={styles.saveWideBtnText}>{saved ? 'נשמר' : 'שמירה'}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.profileLink} onPress={() => router.push('/profile')} activeOpacity={0.85}>
+          <Ionicons name="trophy-outline" size={16} color={theme.colors.primaryLight} />
+          <Text style={styles.profileLinkText}>האזור האישי שלי</Text>
+          <Ionicons name="chevron-back" size={14} color={theme.colors.primaryLight} />
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.scriptCard}>
         {tour.text
@@ -319,9 +331,21 @@ const styles = StyleSheet.create({
   },
   script: { fontSize: 18, lineHeight: 30, color: theme.colors.text },
   scriptSpacing: { marginTop: theme.spacing(2) },
+  actionsRow: {
+    flexDirection: 'row', gap: theme.spacing(1),
+    marginHorizontal: theme.spacing(2), marginBottom: theme.spacing(1),
+  },
+  saveWideBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: theme.spacing(0.75), paddingVertical: theme.spacing(1.5),
+    borderRadius: theme.radiusLg, borderWidth: 1.5, borderColor: theme.colors.primaryLight,
+    backgroundColor: theme.colors.surface,
+  },
+  saveWideBtnDone: { backgroundColor: theme.colors.surfaceAlt },
+  saveWideBtnText: { color: theme.colors.primary, fontWeight: '700', fontSize: 14 },
   profileLink: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: theme.spacing(0.75), marginHorizontal: theme.spacing(2), marginBottom: theme.spacing(1),
+    flex: 1.3, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: theme.spacing(0.75),
     backgroundColor: theme.colors.surface, borderRadius: theme.radiusLg,
     paddingVertical: theme.spacing(1.5), ...theme.shadowSoft,
   },

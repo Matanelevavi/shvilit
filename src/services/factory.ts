@@ -30,7 +30,7 @@ export function getLlmProvider(_hasAuthToken = false): LLMProvider {
 }
 
 export function getTtsProvider(): TTSProvider {
-  // web: mp3 מהשרת (edge-tts) - עובד בכל דפדפן, גם בטלפונים בלי קול עברי מותקן.
+  // web: mp3 מהשרת (Gemini TTS) - עובד בכל דפדפן, גם בטלפונים בלי קול עברי מותקן.
   // native: קול המכשיר (עובד offline, ללא המתנה לשרת).
   if (!ttsProvider) {
     ttsProvider = Platform.OS === 'web' ? new BackendAudioTTS() : new ExpoSpeechTTS();

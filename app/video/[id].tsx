@@ -200,7 +200,7 @@ export default function VideoTourScreen() {
             <Text style={styles.profileBtnText}>אזור אישי</Text>
           </TouchableOpacity>
         </View>
-        <Text style={styles.attr}>וידאו: Gemini + edge-tts + ויקיפדיה</Text>
+        <Text style={styles.attr}>סרטון: שבילית · מבוסס על ויקיפדיה</Text>
       </View>
     );
   }
