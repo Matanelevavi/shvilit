@@ -35,6 +35,9 @@ const OG_IMAGE = `${SITE_URL}/og-image.png`;
 const headExtra = `
     <title>${TITLE}</title>
     <meta name="description" content="${DESCRIPTION}" />
+    <!-- אימות בעלות על הדומיין ב-Google Search Console - נדרש כדי ש-Google
+         יאמת את מיתוג ה-OAuth (App name, לוגו) שמוצג במסך ההתחברות. -->
+    <meta name="google-site-verification" content="exnmhHDdAYvJav8m56eP0h4F5n3HvSqRBYeKn7X2ihw" />
     <meta name="theme-color" content="#0f3d2e" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="${SITE_URL}" />
