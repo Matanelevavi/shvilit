@@ -33,10 +33,10 @@ const STYLE_META: Record<TourStyle, { emoji: string; desc: string; color: string
   kids:       { emoji: '🎈',  desc: 'הסבר כיפי ומתאים לכל גיל', color: '#1a6b40' },
 };
 
-const LENGTH_META: Record<number, { label: string; words: string; icon: string }> = {
-  3:  { label: '3 דקות', words: '~450 מילים',  icon: 'flash-outline'   },
-  5:  { label: '5 דקות', words: '~750 מילים',  icon: 'walk-outline'    },
-  10: { label: '10 דקות', words: '~1,500 מילים', icon: 'map-outline'    },
+const LENGTH_META: Record<number, { label: string; icon: string }> = {
+  3:  { label: '3 דקות', icon: 'flash-outline' },
+  5:  { label: '5 דקות', icon: 'walk-outline'  },
+  10: { label: '10 דקות', icon: 'map-outline'   },
 };
 
 export default function PoiScreen() {
@@ -152,7 +152,19 @@ export default function PoiScreen() {
         </LinearGradient>
       </View>
 
-      {/* Summary - לחיצה מרחיבה לתיאור מלא יותר מוויקיפדיה */}
+      {/* Highlights - הרושם הראשון: נקודות עם אימוג'ים, לא טקסט יבש */}
+      {highlights.length > 0 && (
+        <View style={styles.highlightsCard}>
+          {highlights.map((h, i) => (
+            <View key={i} style={styles.highlightRow}>
+              <Text style={styles.highlightEmoji}>{h.emoji}</Text>
+              <Text style={styles.highlightText}>{h.text}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Summary - תוכן משני, לחיצה מרחיבה לתיאור מלא יותר מוויקיפדיה */}
       {poi.summary ? (
         <TouchableOpacity style={styles.summaryCard} onPress={toggleSummary} activeOpacity={0.85}>
           <Text style={styles.summaryText} numberOfLines={summaryExpanded ? undefined : 4}>
@@ -170,18 +182,6 @@ export default function PoiScreen() {
           </View>
         </TouchableOpacity>
       ) : null}
-
-      {/* Highlights - 4-5 נקודות מרכזיות למבט-על, לפני ההעמקה בתוכן המלא */}
-      {highlights.length > 0 && (
-        <View style={styles.highlightsCard}>
-          {highlights.map((h, i) => (
-            <View key={i} style={styles.highlightRow}>
-              <Text style={styles.highlightEmoji}>{h.emoji}</Text>
-              <Text style={styles.highlightText}>{h.text}</Text>
-            </View>
-          ))}
-        </View>
-      )}
 
       {/* Tour builder */}
       <View style={styles.builderCard}>
@@ -202,7 +202,6 @@ export default function PoiScreen() {
               >
                 <Ionicons name={meta.icon as any} size={20} color={active ? '#fff' : theme.colors.primaryLight} />
                 <Text style={[styles.lengthLabel, active && styles.lengthLabelActive]}>{meta.label}</Text>
-                <Text style={[styles.lengthWords, active && styles.lengthWordsActive]}>{meta.words}</Text>
               </TouchableOpacity>
             );
           })}
@@ -240,7 +239,7 @@ export default function PoiScreen() {
         <View style={styles.previewPill}>
           <Ionicons name="information-circle-outline" size={15} color={theme.colors.primaryLight} />
           <Text style={styles.previewText}>
-            הדרכה {selectedStyleMeta.emoji} {TOUR_STYLE_LABELS[style]} · {selectedLengthMeta.label} · {selectedLengthMeta.words}
+            הדרכה {selectedStyleMeta.emoji} {TOUR_STYLE_LABELS[style]} · {selectedLengthMeta.label}
           </Text>
         </View>
       </View>
@@ -319,7 +318,7 @@ const styles = StyleSheet.create({
   summaryCard: {
     backgroundColor: theme.colors.surface,
     marginHorizontal: theme.spacing(2),
-    marginTop: theme.spacing(2),
+    marginTop: theme.spacing(1.5),
     borderRadius: theme.radiusLg,
     padding: theme.spacing(2),
     ...theme.shadowSoft,
@@ -334,7 +333,7 @@ const styles = StyleSheet.create({
   highlightsCard: {
     backgroundColor: theme.colors.surfaceAlt,
     marginHorizontal: theme.spacing(2),
-    marginTop: theme.spacing(1.5),
+    marginTop: theme.spacing(2),
     borderRadius: theme.radiusLg,
     padding: theme.spacing(2),
     gap: theme.spacing(1),
@@ -376,8 +375,6 @@ const styles = StyleSheet.create({
   },
   lengthLabel: { fontSize: 13, fontWeight: '700', color: theme.colors.text },
   lengthLabelActive: { color: '#fff' },
-  lengthWords: { fontSize: 10, color: theme.colors.textMuted },
-  lengthWordsActive: { color: 'rgba(255,255,255,0.75)' },
 
   styleGrid: { flexDirection: 'row', gap: theme.spacing(1) },
   styleCard: {

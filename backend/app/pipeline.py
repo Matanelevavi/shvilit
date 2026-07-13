@@ -16,7 +16,8 @@ _RENDER_SEM = asyncio.Semaphore(2)
 
 
 async def run_pipeline(
-    tour_id: str, location: str, duration_minutes: int, style: str, source_text: str = ""
+    tour_id: str, location: str, duration_minutes: int, style: str,
+    source_text: str = "", page_id: str | None = None,
 ) -> None:
     work_dir = TEMP_DIR / tour_id
     work_dir.mkdir(parents=True, exist_ok=True)
@@ -37,7 +38,7 @@ async def run_pipeline(
             async def _images():
                 # מילות מפתח מהתסריט (קריאה מהירה ~5s), ואחר כך תמונות בעלות ערך.
                 keywords = await generate_keywords(script)
-                return await fetch_images(location, images_dir, keywords=keywords)
+                return await fetch_images(location, images_dir, keywords=keywords, page_id=page_id)
 
             audio_dur, images = await asyncio.gather(_tts(), _images())
 

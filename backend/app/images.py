@@ -26,24 +26,38 @@ def _usable(title: str) -> bool:
     return low.endswith(_GOOD_EXT) and not any(h in low for h in _SKIP_HINTS)
 
 
-async def _wiki_page(client: httpx.AsyncClient, location: str):
-    """מחזיר (קבצי תמונות בערך, קואורדינטה, Wikidata Q-id)."""
-    search = await client.get(
-        WIKI_API,
-        params={"action": "query", "format": "json", "list": "search", "srsearch": location, "srlimit": 1},
-    )
-    hits = search.json().get("query", {}).get("search", [])
-    if not hits:
-        return [], None, None
-    title = hits[0]["title"]
+async def _wiki_page(client: httpx.AsyncClient, location: str, page_id: Optional[str] = None):
+    """מחזיר (קבצי תמונות בערך, קואורדינטה, Wikidata Q-id).
 
-    resp = await client.get(
-        WIKI_API,
-        params={
-            "action": "query", "format": "json", "titles": title,
-            "prop": "images|coordinates|pageprops", "ppprop": "wikibase_item", "imlimit": 60,
-        },
-    )
+    אם page_id סופק (המשתמש כבר בחר ערך ספציפי באפליקציה) - שולפים אותו
+    ישירות לפי pageid, בלי לחפש מחדש לפי שם. חיפוש לפי שם עלול לפגוע בערך
+    שגוי כששם המקום דו-משמעי (למשל "רבבה" - גם יישוב וגם המילה "עשרת אלפים").
+    """
+    if page_id:
+        resp = await client.get(
+            WIKI_API,
+            params={
+                "action": "query", "format": "json", "pageids": page_id,
+                "prop": "images|coordinates|pageprops", "ppprop": "wikibase_item", "imlimit": 60,
+            },
+        )
+    else:
+        search = await client.get(
+            WIKI_API,
+            params={"action": "query", "format": "json", "list": "search", "srsearch": location, "srlimit": 1},
+        )
+        hits = search.json().get("query", {}).get("search", [])
+        if not hits:
+            return [], None, None
+        title = hits[0]["title"]
+
+        resp = await client.get(
+            WIKI_API,
+            params={
+                "action": "query", "format": "json", "titles": title,
+                "prop": "images|coordinates|pageprops", "ppprop": "wikibase_item", "imlimit": 60,
+            },
+        )
     pages = resp.json().get("query", {}).get("pages", {})
     files: List[str] = []
     coord: Optional[Tuple[float, float]] = None
@@ -238,10 +252,13 @@ async def _dedup_by_content(paths: List[str]) -> List[str]:
     return kept
 
 
-async def fetch_images(location: str, dest_dir: str, keywords: Optional[List[str]] = None, want: int = TARGET_IMAGES) -> List[str]:
+async def fetch_images(
+    location: str, dest_dir: str, keywords: Optional[List[str]] = None,
+    want: int = TARGET_IMAGES, page_id: Optional[str] = None,
+) -> List[str]:
     os.makedirs(dest_dir, exist_ok=True)
     async with httpx.AsyncClient(timeout=30, headers=HTTP_HEADERS) as client:
-        files, coord, qid = await _wiki_page(client, location)
+        files, coord, qid = await _wiki_page(client, location, page_id)
 
         urls: List[str] = []
         if files:

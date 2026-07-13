@@ -13,6 +13,10 @@ class GenerateTourRequest(BaseModel):
     # Gemini עלול "להשלים" בביטחון מלא פרטים שלא היו, במיוחד במקומות
     # קטנים/פחות מוכרים. ראה app/script_gen.py::_build_prompt.
     source_text: str = ""
+    # pageid של הערך בוויקיפדיה העברית שהמשתמש בחר בפועל (אם קיים).
+    # בלעדיו images.py מחפש מחדש לפי שם בלבד ועלול לפגוע בערך שגוי כשהשם
+    # דו-משמעי (למשל "רבבה" - גם יישוב וגם המילה "עשרת אלפים").
+    page_id: Optional[str] = None
 
 
 class TourStatus(BaseModel):

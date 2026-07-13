@@ -71,7 +71,7 @@ async def generate_tour(req: GenerateTourRequest, background: BackgroundTasks):
     tour_id = cache.create_processing(req.location, req.duration_minutes, req.style)
     # הרצה ברקע - הרינדור אורך זמן, אז מחזירים 'processing' והלקוח עושה polling.
     background.add_task(
-        run_pipeline, tour_id, req.location, req.duration_minutes, req.style, req.source_text
+        run_pipeline, tour_id, req.location, req.duration_minutes, req.style, req.source_text, req.page_id
     )
 
     row = cache.get_by_id(tour_id)
