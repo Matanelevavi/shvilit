@@ -173,10 +173,6 @@ export default function PoiScreen() {
       {/* Summary - תוכן משני, לחיצה מרחיבה לתיאור מלא יותר מוויקיפדיה */}
       {poi.summary ? (
         <TouchableOpacity style={styles.summaryCard} onPress={toggleSummary} activeOpacity={0.85}>
-          <View style={styles.summaryHeader}>
-            <Ionicons name="book-outline" size={13} color={theme.colors.textMuted} />
-            <Text style={styles.summaryHeaderText}>מוויקיפדיה</Text>
-          </View>
           <Text style={styles.summaryText} numberOfLines={summaryExpanded ? undefined : 4}>
             {summaryExpanded && extendedSummary ? extendedSummary : poi.summary}
           </Text>
@@ -334,14 +330,6 @@ const styles = StyleSheet.create({
     borderRadius: theme.radiusLg,
     padding: theme.spacing(2),
     ...theme.shadowSoft,
-  },
-  summaryHeader: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    marginBottom: theme.spacing(1),
-  },
-  summaryHeaderText: {
-    fontSize: 11, fontWeight: '700', color: theme.colors.textMuted,
-    textTransform: 'uppercase', letterSpacing: 0.5,
   },
   summaryText: { fontSize: 15, lineHeight: 24, color: theme.colors.text },
   summaryToggle: {
