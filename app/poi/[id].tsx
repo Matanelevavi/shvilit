@@ -155,9 +155,15 @@ export default function PoiScreen() {
       {/* Highlights - הרושם הראשון: נקודות עם אימוג'ים, לא טקסט יבש */}
       {highlights.length > 0 && (
         <View style={styles.highlightsCard}>
+          <View style={styles.highlightsHeader}>
+            <Ionicons name="sparkles" size={15} color={theme.colors.accent} />
+            <Text style={styles.highlightsHeaderText}>בקצרה</Text>
+          </View>
           {highlights.map((h, i) => (
-            <View key={i} style={styles.highlightRow}>
-              <Text style={styles.highlightEmoji}>{h.emoji}</Text>
+            <View key={i} style={[styles.highlightRow, i > 0 && styles.highlightRowDivider]}>
+              <View style={styles.highlightEmojiChip}>
+                <Text style={styles.highlightEmoji}>{h.emoji}</Text>
+              </View>
               <Text style={styles.highlightText}>{h.text}</Text>
             </View>
           ))}
@@ -167,6 +173,10 @@ export default function PoiScreen() {
       {/* Summary - תוכן משני, לחיצה מרחיבה לתיאור מלא יותר מוויקיפדיה */}
       {poi.summary ? (
         <TouchableOpacity style={styles.summaryCard} onPress={toggleSummary} activeOpacity={0.85}>
+          <View style={styles.summaryHeader}>
+            <Ionicons name="book-outline" size={13} color={theme.colors.textMuted} />
+            <Text style={styles.summaryHeaderText}>מוויקיפדיה</Text>
+          </View>
           <Text style={styles.summaryText} numberOfLines={summaryExpanded ? undefined : 4}>
             {summaryExpanded && extendedSummary ? extendedSummary : poi.summary}
           </Text>
@@ -323,6 +333,14 @@ const styles = StyleSheet.create({
     padding: theme.spacing(2),
     ...theme.shadowSoft,
   },
+  summaryHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    marginBottom: theme.spacing(1),
+  },
+  summaryHeaderText: {
+    fontSize: 11, fontWeight: '700', color: theme.colors.textMuted,
+    textTransform: 'uppercase', letterSpacing: 0.5,
+  },
   summaryText: { fontSize: 15, lineHeight: 24, color: theme.colors.text },
   summaryToggle: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
@@ -331,15 +349,35 @@ const styles = StyleSheet.create({
   summaryToggleText: { fontSize: 13, fontWeight: '700', color: theme.colors.primaryLight },
 
   highlightsCard: {
-    backgroundColor: theme.colors.surfaceAlt,
+    backgroundColor: theme.colors.surface,
     marginHorizontal: theme.spacing(2),
     marginTop: theme.spacing(2),
     borderRadius: theme.radiusLg,
     padding: theme.spacing(2),
-    gap: theme.spacing(1),
+    borderWidth: 1,
+    borderColor: theme.colors.surfaceAlt,
+    ...theme.shadowSoft,
   },
-  highlightRow: { flexDirection: 'row', alignItems: 'flex-start', gap: theme.spacing(1) },
-  highlightEmoji: { fontSize: 18, lineHeight: 22 },
+  highlightsHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    marginBottom: theme.spacing(1.25),
+  },
+  highlightsHeaderText: {
+    fontSize: 13, fontWeight: '800', color: theme.colors.primary,
+  },
+  highlightRow: {
+    flexDirection: 'row', alignItems: 'center', gap: theme.spacing(1.25),
+    paddingVertical: theme.spacing(1),
+  },
+  highlightRowDivider: {
+    borderTopWidth: 1, borderTopColor: theme.colors.surfaceAlt,
+  },
+  highlightEmojiChip: {
+    width: 34, height: 34, borderRadius: 17,
+    backgroundColor: theme.colors.surfaceAlt,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  highlightEmoji: { fontSize: 17, lineHeight: 20 },
   highlightText: { flex: 1, fontSize: 14, lineHeight: 21, color: theme.colors.text },
 
   builderCard: {

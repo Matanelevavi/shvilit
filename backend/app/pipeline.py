@@ -32,7 +32,7 @@ async def run_pipeline(
 
             # שלב 3+4: TTS ואיסוף תמונות+מילות מפתח במקביל - חוסך ~15-20 שניות.
             async def _tts():
-                # synthesize מחזיר את משך האודיו מ-WordBoundary timestamps - מדויק יותר מ-ffprobe.
+                # synthesize מחזיר את משך האודיו, נמדד מהקובץ עצמו (ffprobe).
                 return await synthesize(script, style, audio_path, srt_path)
 
             async def _images():

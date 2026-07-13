@@ -3,7 +3,9 @@ const path = require('path');
 const fs = require('fs');
 
 const assetsDir = path.join(__dirname, '..', 'assets');
+const iconsDir = path.join(__dirname, '..', 'public', 'icons');
 fs.mkdirSync(assetsDir, { recursive: true });
+fs.mkdirSync(iconsDir, { recursive: true });
 
 // ─── Motif (relative coords, centered at 0,0; fits in ±512) ────────────────
 function motif(scale = 1, glowAlpha = 0.18) {
@@ -59,7 +61,7 @@ function motif(scale = 1, glowAlpha = 0.18) {
         stroke-linecap="round" stroke-dasharray="${2 * s} ${70 * s}"/>
 
   <!-- Pin shadow -->
-  <g transform="translate(${(-10 + 10) * s},${(-210 + 10) * s})">
+  <g transform="translate(${(18 + 10) * s},${(-210 + 10) * s})">
     <path d="M0,${-148 * s} C ${86 * s},${-148 * s} ${138 * s},${-90 * s} ${138 * s},${-28 * s}
              C ${138 * s},${74 * s} 0,${200 * s} 0,${200 * s}
              C 0,${200 * s} ${-138 * s},${74 * s} ${-138 * s},${-28 * s}
@@ -68,7 +70,7 @@ function motif(scale = 1, glowAlpha = 0.18) {
   </g>
 
   <!-- Pin body -->
-  <g transform="translate(${-10 * s},${-210 * s})">
+  <g transform="translate(${18 * s},${-210 * s})">
     <path d="M0,${-148 * s} C ${86 * s},${-148 * s} ${138 * s},${-90 * s} ${138 * s},${-28 * s}
              C ${138 * s},${74 * s} 0,${200 * s} 0,${200 * s}
              C 0,${200 * s} ${-138 * s},${74 * s} ${-138 * s},${-28 * s}
@@ -123,6 +125,14 @@ const splashSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 102
   <g transform="translate(512,512) scale(0.72)">${motif(1)}</g>
 </svg>`;
 
+// ─── Maskable icon (PWA/Android): full-bleed bg + אמנות בתוך ה-safe zone.
+// בלי זה, Android/Chrome היה בונה maskable משלו מתוך icon.png (full-bleed
+// עד הקצוות) - גוזר/מקטין אוטומטית ובעצם זה מה שגרם למראה המטושטש בהתקנה.
+const maskableSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" fill="#0f3d2e"/>
+  <g transform="translate(512,512) scale(0.6) translate(0,0)">${motif(1)}</g>
+</svg>`;
+
 // ─── Favicon (simplified, no filter effects for tiny size) ─────────────────
 const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
   <rect width="48" height="48" rx="10" fill="#0f3d2e"/>
@@ -165,7 +175,29 @@ async function main() {
     .toFile(out('favicon.png'));
   console.log('✓ favicon.png');
 
-  console.log('\nAll assets generated in', assetsDir);
+  // ─── PWA icons (public/icons) - נגזרים מאותו מקור וקטורי, אף פעם לא
+  // מתפספסים/מתיישנים ידנית. ה-maskable מונע מ-Android/Chrome לגזור בעצמו
+  // מתוך icon.png ה-full-bleed - זו הייתה סיבת המראה המטושטש בהתקנה.
+  const iconOut = (name) => path.join(iconsDir, name);
+
+  await sharp(Buffer.from(iconSvg)).resize(192, 192)
+    .png({ quality: 100, compressionLevel: 9 }).toFile(iconOut('icon-192.png'));
+  console.log('✓ icons/icon-192.png');
+
+  await sharp(Buffer.from(iconSvg)).resize(512, 512)
+    .png({ quality: 100, compressionLevel: 9 }).toFile(iconOut('icon-512.png'));
+  console.log('✓ icons/icon-512.png');
+
+  await sharp(Buffer.from(maskableSvg)).resize(512, 512)
+    .png({ quality: 100, compressionLevel: 9 }).toFile(iconOut('icon-512-maskable.png'));
+  console.log('✓ icons/icon-512-maskable.png');
+
+  await sharp(Buffer.from(iconSvg)).resize(180, 180)
+    .flatten({ background: GREEN })
+    .png({ quality: 100, compressionLevel: 9 }).toFile(iconOut('apple-touch-icon.png'));
+  console.log('✓ icons/apple-touch-icon.png');
+
+  console.log('\nAll assets generated in', assetsDir, 'and', iconsDir);
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });

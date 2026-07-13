@@ -101,8 +101,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         options: { redirectTo },
       });
       if (error) throw error;
-      // Supabase JS מנתב את הדפדפן אוטומטית. אם לא - ננתב ידנית.
-      if (data?.url) window.location.href = data.url;
+      if (data?.url) {
+        // מסמן שיש להציע התקנת PWA כשהמשתמש חוזר מ-Google מחובר - ראה
+        // app/_layout.tsx. sessionStorage שורד את הניווט המלא לדף Google וחזרה.
+        window.sessionStorage.setItem('shvilit_offer_install', '1');
+        window.location.href = data.url;
+      }
       return;
     }
 

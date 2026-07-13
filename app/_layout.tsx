@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { I18nManager, LogBox, Platform, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter, useSegments } from 'expo-router';
@@ -7,8 +7,10 @@ import { StatusBar } from 'expo-status-bar';
 import { AuthProvider, useAuth } from '@/auth/AuthProvider';
 import { LocalProfileProvider, useLocalProfile } from '@/auth/LocalProfile';
 import { ErrorBoundary } from '@/ui/ErrorBoundary';
+import { InstallPromptModal } from '@/ui/InstallPromptModal';
 import { theme } from '@/ui/theme';
 import { trackEvent } from '@/state/analytics';
+import { canInstall, promptInstall } from '@/state/pwaInstall';
 
 // אכיפת כיווניות עברית (RTL) לכל האפליקציה.
 I18nManager.allowRTL(true);
@@ -51,10 +53,38 @@ function AuthGate() {
   const { profile, loading: profileLoading } = useLocalProfile();
   const segments = useSegments();
   const router = useRouter();
+  const [showInstall, setShowInstall] = useState(false);
 
   // מחובר אם יש session של Supabase או פרופיל מקומי (גיבוי שתמיד עובד).
   const isAuthed = !!user || !!profile;
   const loading = authLoading || profileLoading;
+
+  // הצעת התקנת PWA: פעם אחת, מיד אחרי חזרה מהתחברות Google (web).
+  // AuthProvider מסמן sessionStorage לפני ההפניה ל-Google; כאן, אחרי החזרה
+  // המחוברת, בודקים אם אירוע ה-beforeinstallprompt כבר נתפס - הוא עלול
+  // להגיע בכל רגע אחרי טעינת הדף, ולא בהכרח באופן מיידי.
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+    if (loading || !isAuthed) return;
+    if (window.sessionStorage.getItem('shvilit_offer_install') !== '1') return;
+    window.sessionStorage.removeItem('shvilit_offer_install');
+
+    let cancelled = false;
+    let attempts = 0;
+    const tryShow = () => {
+      if (cancelled) return;
+      if (canInstall()) { setShowInstall(true); return; }
+      attempts += 1;
+      if (attempts < 6) setTimeout(tryShow, 500);
+    };
+    tryShow();
+    return () => { cancelled = true; };
+  }, [isAuthed, loading]);
+
+  const onInstall = async () => {
+    await promptInstall();
+    setShowInstall(false);
+  };
 
   useEffect(() => {
     if (loading) return;
@@ -76,6 +106,7 @@ function AuthGate() {
   }, [loading, segments.join('/')]);
 
   return (
+    <>
     <Stack
       screenOptions={{
         headerStyle: { backgroundColor: theme.colors.primary },
@@ -107,6 +138,10 @@ function AuthGate() {
       <Stack.Screen name="admin"         options={{ title: 'פאנל ניהול', headerStyle: { backgroundColor: '#0a2a1e' } }} />
       <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
     </Stack>
+    {showInstall && (
+      <InstallPromptModal onInstall={onInstall} onDismiss={() => setShowInstall(false)} />
+    )}
+    </>
   );
 }
 
