@@ -51,11 +51,6 @@ export default function PoiScreen() {
   const [busy, setBusy] = useState(false);
   const [busyVideo, setBusyVideo] = useState(false);
 
-  // תיאור מורחב: נטען רק בלחיצה על התקציר הקצר.
-  const [summaryExpanded, setSummaryExpanded] = useState(false);
-  const [extendedSummary, setExtendedSummary] = useState<string | null>(null);
-  const [extendedLoading, setExtendedLoading] = useState(false);
-
   // נקודות מרכזיות: נטענות ברקע עם כניסה למסך, מוצגות רק אם הצליחו.
   const [highlights, setHighlights] = useState<PlaceHighlight[]>([]);
 
@@ -69,20 +64,6 @@ export default function PoiScreen() {
     requestHighlights(poi.title, poi.summary).then((h) => { if (active) setHighlights(h); });
     return () => { active = false; };
   }, [poi?.id]);
-
-  const toggleSummary = async () => {
-    if (summaryExpanded) { setSummaryExpanded(false); return; }
-    setSummaryExpanded(true);
-    if (extendedSummary || extendedLoading || !poi) return;
-    setExtendedLoading(true);
-    try {
-      setExtendedSummary(await getPoiProvider().fetchExtendedSummary(poi.id));
-    } catch {
-      // נשארים עם התקציר הקצר - לא קריטי
-    } finally {
-      setExtendedLoading(false);
-    }
-  };
 
   if (!poi) {
     return (
@@ -173,25 +154,6 @@ export default function PoiScreen() {
           ))}
         </View>
       )}
-
-      {/* Summary - תוכן משני, לחיצה מרחיבה לתיאור מלא יותר מוויקיפדיה */}
-      {poi.summary ? (
-        <TouchableOpacity style={styles.summaryCard} onPress={toggleSummary} activeOpacity={0.85}>
-          <Text style={styles.summaryText} numberOfLines={summaryExpanded ? undefined : 4}>
-            {summaryExpanded && extendedSummary ? extendedSummary : poi.summary}
-          </Text>
-          <View style={styles.summaryToggle}>
-            {extendedLoading ? (
-              <ActivityIndicator size="small" color={theme.colors.primaryLight} />
-            ) : (
-              <>
-                <Text style={styles.summaryToggleText}>{summaryExpanded ? 'הצג פחות' : 'קרא עוד'}</Text>
-                <Ionicons name={summaryExpanded ? 'chevron-up' : 'chevron-down'} size={14} color={theme.colors.primaryLight} />
-              </>
-            )}
-          </View>
-        </TouchableOpacity>
-      ) : null}
 
       {/* Tour builder */}
       <View style={styles.builderCard}>
@@ -326,21 +288,6 @@ const styles = StyleSheet.create({
   heroTitle:      { color: '#fff', fontSize: 26, fontWeight: '800' },
   heroAttrib:     { flexDirection: 'row', alignItems: 'center', gap: 4 },
   heroAttribText: { fontSize: 11, color: 'rgba(255,255,255,0.65)' },
-
-  summaryCard: {
-    backgroundColor: theme.colors.surface,
-    marginHorizontal: theme.spacing(2),
-    marginTop: theme.spacing(1.5),
-    borderRadius: theme.radiusLg,
-    padding: theme.spacing(2),
-    ...theme.shadowSoft,
-  },
-  summaryText: { fontSize: 15, lineHeight: 24, color: theme.colors.text },
-  summaryToggle: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    marginTop: theme.spacing(1), alignSelf: 'flex-start',
-  },
-  summaryToggleText: { fontSize: 13, fontWeight: '700', color: theme.colors.primaryLight },
 
   highlightsCard: {
     backgroundColor: theme.colors.surface,
