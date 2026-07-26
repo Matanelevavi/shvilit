@@ -11,6 +11,7 @@ import { InstallPromptModal } from '@/ui/InstallPromptModal';
 import { theme } from '@/ui/theme';
 import { trackEvent } from '@/state/analytics';
 import { canInstall, promptInstall } from '@/state/pwaInstall';
+import { config } from '@/config/env';
 
 // אכיפת כיווניות עברית (RTL) לכל האפליקציה.
 I18nManager.allowRTL(true);
@@ -55,8 +56,12 @@ function AuthGate() {
   const router = useRouter();
   const [showInstall, setShowInstall] = useState(false);
 
-  // מחובר אם יש session של Supabase או פרופיל מקומי (גיבוי שתמיד עובד).
-  const isAuthed = !!user || !!profile;
+  // מחובר אם יש session אמיתי של Supabase. פרופיל מקומי (אורח) נחשב מחובר
+  // רק כשאין Google מוגדר בכלל (פיתוח מקומי בלי Supabase) - בפרודקשן, כניסה
+  // חייבת להיות עם Google. נתוני אורח קיימים (נקודות/הדרכות/וידאו) נשארים
+  // מקומית ומתמזגים לענן ב-syncProfileToSupabase ברגע שהוא מתחבר עם Google.
+  const googleOnly = config.hasSupabase && config.googleEnabled;
+  const isAuthed = !!user || (!!profile && !googleOnly);
   const loading = authLoading || profileLoading;
 
   // הצעת התקנת PWA: פעם אחת, מיד אחרי חזרה מהתחברות Google (web).

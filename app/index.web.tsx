@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -116,6 +116,23 @@ export default function MapScreenWeb() {
     }
   };
 
+  // ניסיון שקט למיקום בטעינת המסך: רק אם ההרשאה כבר אושרה בעבר בדפדפן
+  // (navigator.permissions), כדי לא להקפיץ בקשת הרשאה בלי שהמשתמש ביקש.
+  // דפדפנים בלי Permissions API (כמו Safari) פשוט מדלגים - לחיצה ידנית תעבוד תמיד.
+  useEffect(() => {
+    if (typeof navigator === 'undefined' || !navigator.permissions?.query) return;
+    let cancelled = false;
+    navigator.permissions
+      .query({ name: 'geolocation' as PermissionName })
+      .then((status) => {
+        if (!cancelled && status.state === 'granted') searchNearby();
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const loadNearby = async (center: Coordinate) => {
     try {
       setLoading(true);
@@ -189,10 +206,29 @@ export default function MapScreenWeb() {
             onSubmitEditing={() => runSearch(query)}
           />
           <TouchableOpacity style={styles.searchBtn} onPress={() => runSearch(query)} activeOpacity={0.9}>
-            {loading ? (
+            {loading && resultsSource === 'search' ? (
               <ActivityIndicator color={theme.colors.accentDark} />
             ) : (
               <Ionicons name="search" size={20} color={theme.colors.accentDark} />
+            )}
+          </TouchableOpacity>
+
+          {/* פעולה מרכזית שנייה, צמודה לחיפוש וגבוהה יותר מהצ'יפים למטה -
+              כדי ששתי הפעולות (הקלדה / "מה סביבי") ייקראו כחטיבה אחת בולטת. */}
+          <TouchableOpacity
+            style={styles.locateBtn}
+            onPress={searchNearby}
+            activeOpacity={0.9}
+            accessibilityLabel="מה יש סביבי?"
+          >
+            {loading && resultsSource === 'nearby' ? (
+              <ActivityIndicator color={theme.colors.accentDark} size="small" />
+            ) : (
+              <>
+                {/* היפוך אופקי: החץ האלכסוני מצביע שמאלה-למעלה כמקובל ב-RTL */}
+                <Ionicons name="navigate" size={18} color={theme.colors.accentDark} style={{ transform: [{ scaleX: -1 }] }} />
+                <Text style={styles.locateBtnText}>סביבי</Text>
+              </>
             )}
           </TouchableOpacity>
         </View>
@@ -214,13 +250,6 @@ export default function MapScreenWeb() {
       </LinearGradient>
 
       <View style={styles.body}>
-
-        {/* Nearby button */}
-        <TouchableOpacity style={styles.nearbyBtn} onPress={searchNearby} activeOpacity={0.9}>
-          {/* היפוך אופקי: החץ האלכסוני מצביע שמאלה-למעלה כמקובל ב-RTL */}
-          <Ionicons name="navigate" size={18} color={theme.colors.primary} style={{ transform: [{ scaleX: -1 }] }} />
-          <Text style={styles.nearbyText}>מה יש סביבי?</Text>
-        </TouchableOpacity>
 
         {/* Error/notice */}
         {notice ? <Text style={styles.notice}>{notice}</Text> : null}
@@ -347,6 +376,15 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.accent,
     alignItems: 'center', justifyContent: 'center',
   },
+  // גבוה יותר מהצ'יפים למטה (56 מול ~30) כדי לקרוא כפעולה מרכזית, לצד ההקלדה.
+  locateBtn: {
+    width: 56, height: 56,
+    borderRadius: theme.radiusLg,
+    backgroundColor: theme.colors.accent,
+    alignItems: 'center', justifyContent: 'center',
+    gap: 2,
+  },
+  locateBtnText: { color: theme.colors.accentDark, fontWeight: '800', fontSize: 10 },
 
   body: { padding: theme.spacing(2), gap: theme.spacing(1.5) },
 
@@ -364,20 +402,6 @@ const styles = StyleSheet.create({
     ...theme.shadowSoft,
   },
   suggChipText: { color: theme.colors.primary, fontSize: 13, fontWeight: '600' },
-
-  nearbyBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: theme.spacing(1),
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1.5,
-    borderColor: theme.colors.primaryLight,
-    paddingVertical: theme.spacing(1.75),
-    borderRadius: theme.radiusLg,
-    ...theme.shadowSoft,
-  },
-  nearbyText: { color: theme.colors.primary, fontWeight: '700', fontSize: 15 },
 
   notice: {
     color: theme.colors.danger, fontSize: 14, textAlign: 'center',

@@ -102,26 +102,21 @@ export default function LoginScreen() {
       <Text style={styles.tagline}>הדרכות חכמות,{'\n'}בכל מקום שתעצרו בו</Text>
 
       {config.hasSupabase && config.googleEnabled ? (
-        <>
-          <TouchableOpacity
-            style={[styles.button, busy && styles.buttonDisabled]}
-            onPress={onGoogle}
-            disabled={busy}
-            activeOpacity={0.85}
-          >
-            {busy ? (
-              <ActivityIndicator color={theme.colors.accentDark} />
-            ) : (
-              <>
-                <Ionicons name="logo-google" size={18} color={theme.colors.accentDark} />
-                <Text style={styles.buttonText}>התחברות עם Google</Text>
-              </>
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity onPress={onGuest} style={styles.guestLink} activeOpacity={0.7}>
-            <Text style={styles.guestLinkText}>להמשיך כאורח</Text>
-          </TouchableOpacity>
-        </>
+        <TouchableOpacity
+          style={[styles.button, busy && styles.buttonDisabled]}
+          onPress={onGoogle}
+          disabled={busy}
+          activeOpacity={0.85}
+        >
+          {busy ? (
+            <ActivityIndicator color={theme.colors.accentDark} />
+          ) : (
+            <>
+              <Ionicons name="logo-google" size={18} color={theme.colors.accentDark} />
+              <Text style={styles.buttonText}>התחברות עם Google</Text>
+            </>
+          )}
+        </TouchableOpacity>
       ) : (
         <>
           <TextInput
