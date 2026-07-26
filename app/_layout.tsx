@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { I18nManager, LogBox, Platform, TouchableOpacity } from 'react-native';
+import { I18nManager, LogBox, Platform, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -7,7 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { AuthProvider, useAuth } from '@/auth/AuthProvider';
 import { LocalProfileProvider, useLocalProfile } from '@/auth/LocalProfile';
 import { ErrorBoundary } from '@/ui/ErrorBoundary';
-import { InstallPromptModal } from '@/ui/InstallPromptModal';
+import { InstallBanner, INSTALL_BANNER_HEIGHT } from '@/ui/InstallBanner';
 import { theme } from '@/ui/theme';
 import { trackEvent } from '@/state/analytics';
 import { canInstall, promptInstall } from '@/state/pwaInstall';
@@ -48,6 +48,8 @@ LogBox.ignoreLogs([
   'expected version',
 ]);
 
+const INSTALL_DISMISSED_KEY = 'shvilit_install_dismissed';
+
 /** מנתב את המשתמש בין מסך ההתחברות לאפליקציה לפי מצב ה-session. */
 function AuthGate() {
   const { user, loading: authLoading } = useAuth();
@@ -64,15 +66,13 @@ function AuthGate() {
   const isAuthed = !!user || (!!profile && !googleOnly);
   const loading = authLoading || profileLoading;
 
-  // הצעת התקנת PWA: פעם אחת, מיד אחרי חזרה מהתחברות Google (web).
-  // AuthProvider מסמן sessionStorage לפני ההפניה ל-Google; כאן, אחרי החזרה
-  // המחוברת, בודקים אם אירוע ה-beforeinstallprompt כבר נתפס - הוא עלול
-  // להגיע בכל רגע אחרי טעינת הדף, ולא בהכרח באופן מיידי.
+  // הצעת התקנת PWA: באנר בראש המסך בכל כניסה לאפליקציה (web, אחרי התחברות),
+  // כל עוד המשתמש לא סגר אותו בעבר. אירוע ה-beforeinstallprompt עלול להגיע
+  // בכל רגע אחרי טעינת הדף ולא בהכרח באופן מיידי - לכן ניסיון חוזר קצר.
   useEffect(() => {
     if (Platform.OS !== 'web' || typeof window === 'undefined') return;
     if (loading || !isAuthed) return;
-    if (window.sessionStorage.getItem('shvilit_offer_install') !== '1') return;
-    window.sessionStorage.removeItem('shvilit_offer_install');
+    if (window.localStorage.getItem(INSTALL_DISMISSED_KEY) === '1') return;
 
     let cancelled = false;
     let attempts = 0;
@@ -87,7 +87,16 @@ function AuthGate() {
   }, [isAuthed, loading]);
 
   const onInstall = async () => {
-    await promptInstall();
+    const outcome = await promptInstall();
+    // סירוב בדיאלוג הדפדפן עצמו - לא לנדנד שוב בכניסות הבאות.
+    if (outcome === 'dismissed' && typeof window !== 'undefined') {
+      window.localStorage.setItem(INSTALL_DISMISSED_KEY, '1');
+    }
+    setShowInstall(false);
+  };
+
+  const onDismissInstall = () => {
+    if (typeof window !== 'undefined') window.localStorage.setItem(INSTALL_DISMISSED_KEY, '1');
     setShowInstall(false);
   };
 
@@ -112,42 +121,44 @@ function AuthGate() {
   }, [loading, segments.join('/')]);
 
   return (
-    <>
-    <Stack
-      screenOptions={{
-        headerStyle: { backgroundColor: theme.colors.primary },
-        headerTintColor: '#fff',
-        headerTitleStyle: { fontWeight: '700' },
-        contentStyle: { backgroundColor: theme.colors.background },
-        // web: חץ "חזור" שמצביע ימינה, כמקובל בעברית (ברירת המחדל מצביעה
-        // שמאלה כמו באנגלית). ב-native ה-header הנייטיבי מתהפך לבד עם RTL.
-        ...(Platform.OS === 'web' && {
-          headerLeft: ({ canGoBack }: { canGoBack?: boolean }) =>
-            canGoBack ? (
-              <TouchableOpacity onPress={() => router.back()} hitSlop={12} style={{ padding: 4 }}>
-                <Ionicons name="chevron-forward" size={26} color="#fff" />
-              </TouchableOpacity>
-            ) : null,
-        }),
-      }}
-    >
-      <Stack.Screen name="login" options={{ headerShown: false }} />
-      <Stack.Screen name="index" options={{ title: 'שבילית' }} />
-      <Stack.Screen name="poi/[id]" options={{ title: 'נקודת עניין' }} />
-      <Stack.Screen name="tour/[id]" options={{ title: 'ההדרכה שלך' }} />
-      <Stack.Screen name="video/[id]" options={{ title: 'הדרכת וידאו' }} />
-      <Stack.Screen name="saved" options={{ title: 'ההדרכות שלי' }} />
-      <Stack.Screen name="quiz/[id]" options={{ title: 'חידון' }} />
-      <Stack.Screen name="profile" options={{ title: 'האזור האישי שלי' }} />
-      <Stack.Screen name="about"         options={{ title: 'אודות שבילית' }} />
-      <Stack.Screen name="privacy"       options={{ title: 'מדיניות פרטיות' }} />
-      <Stack.Screen name="admin"         options={{ title: 'פאנל ניהול', headerStyle: { backgroundColor: '#0a2a1e' } }} />
-      <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
-    </Stack>
-    {showInstall && (
-      <InstallPromptModal onInstall={onInstall} onDismiss={() => setShowInstall(false)} />
-    )}
-    </>
+    <View style={{ flex: 1 }}>
+      {showInstall && (
+        <InstallBanner onInstall={onInstall} onDismiss={onDismissInstall} />
+      )}
+      <View style={{ flex: 1, paddingTop: showInstall ? INSTALL_BANNER_HEIGHT : 0 }}>
+        <Stack
+          screenOptions={{
+            headerStyle: { backgroundColor: theme.colors.primary },
+            headerTintColor: '#fff',
+            headerTitleStyle: { fontWeight: '700' },
+            contentStyle: { backgroundColor: theme.colors.background },
+            // web: חץ "חזור" שמצביע ימינה, כמקובל בעברית (ברירת המחדל מצביעה
+            // שמאלה כמו באנגלית). ב-native ה-header הנייטיבי מתהפך לבד עם RTL.
+            ...(Platform.OS === 'web' && {
+              headerLeft: ({ canGoBack }: { canGoBack?: boolean }) =>
+                canGoBack ? (
+                  <TouchableOpacity onPress={() => router.back()} hitSlop={12} style={{ padding: 4 }}>
+                    <Ionicons name="chevron-forward" size={26} color="#fff" />
+                  </TouchableOpacity>
+                ) : null,
+            }),
+          }}
+        >
+          <Stack.Screen name="login" options={{ headerShown: false }} />
+          <Stack.Screen name="index" options={{ title: 'שבילית' }} />
+          <Stack.Screen name="poi/[id]" options={{ title: 'נקודת עניין' }} />
+          <Stack.Screen name="tour/[id]" options={{ title: 'ההדרכה שלך' }} />
+          <Stack.Screen name="video/[id]" options={{ title: 'הדרכת וידאו' }} />
+          <Stack.Screen name="saved" options={{ title: 'ההדרכות שלי' }} />
+          <Stack.Screen name="quiz/[id]" options={{ title: 'חידון' }} />
+          <Stack.Screen name="profile" options={{ title: 'האזור האישי שלי' }} />
+          <Stack.Screen name="about"         options={{ title: 'אודות שבילית' }} />
+          <Stack.Screen name="privacy"       options={{ title: 'מדיניות פרטיות' }} />
+          <Stack.Screen name="admin"         options={{ title: 'פאנל ניהול', headerStyle: { backgroundColor: '#0a2a1e' } }} />
+          <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
+        </Stack>
+      </View>
+    </View>
   );
 }
 
