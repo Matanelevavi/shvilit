@@ -3,7 +3,8 @@
  *
  * למה סקריפט? עם web.output="single" (SPA), expo לא משתמש ב-app/+html.tsx -
  * הוא נתמך רק ב-output="static". בלי זה, המשתמש רואה מסך לבן ריק בזמן
- * שה-bundle (כ-2MB) נטען. הסקריפט רץ כחלק מפקודת ה-build (ראה netlify.toml).
+ * שה-bundle (כ-2MB) נטען. הסקריפט רץ כחלק מפקודת ה-build (מוגדרת בהגדרות
+ * הפרויקט ב-Cloudflare, לא בריפו - ראה wrangler.jsonc להגדרות ה-assets).
  *
  * המסך מוסר ע"י app/_layout.tsx ברגע שהאפליקציה עולה.
  */
