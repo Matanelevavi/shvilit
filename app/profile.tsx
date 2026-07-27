@@ -165,6 +165,7 @@ export default function ProfileScreen() {
   const rank = getRank(points);
   const myName = user?.user_metadata?.full_name || profile?.name || 'אני';
   const leaderboard = buildLeaderboard(cloudBoard, user?.id ?? null, myName, points);
+  const topLeaderboard = leaderboard.slice(0, 10);
 
   const openTour = (t: SavedTour) => {
     cachePois([{
@@ -340,13 +341,20 @@ export default function ProfileScreen() {
           המשתמשים בשבילית, לא רשימה אישית ששמרת - לכן מקטע נפרד עם
           כותרת והסבר, לא עוד טאב. ───────────────────────────────── */}
       <View style={styles.boardSection}>
-        <Text style={styles.boardHeading}>לוח מובילים</Text>
+        <View style={styles.boardHeadingRow}>
+          <Text style={styles.boardHeading}>לוח מובילים</Text>
+          {leaderboard.length > 0 && (
+            <Text style={styles.boardCount}>
+              {topLeaderboard.length} מתוך {leaderboard.length}
+            </Text>
+          )}
+        </View>
         <Text style={styles.boardNote}>
           {cloudBoard.length > 0
             ? 'דירוג כל מטיילי שבילית לפי נקודות שנצברו מהשלמת הדרכות וחידונים'
             : 'התחברות עם Google מאפשרת הצטרפות לדירוג מול מטיילים אחרים'}
         </Text>
-        {leaderboard.map((player, i) => (
+        {topLeaderboard.map((player, i) => (
           <View key={i} style={[styles.boardRow, player.isMe && styles.boardRowMe]}>
             <Text style={[styles.boardRank, i < 3 && styles.boardRankTop]}>
               {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
@@ -490,7 +498,9 @@ const styles = StyleSheet.create({
     padding: theme.spacing(2), gap: theme.spacing(1),
     marginTop: theme.spacing(1), backgroundColor: theme.colors.surfaceAlt,
   },
+  boardHeadingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   boardHeading: { fontSize: 17, fontWeight: '800', color: theme.colors.primary },
+  boardCount: { fontSize: 12, fontWeight: '700', color: theme.colors.textMuted },
   boardNote: { fontSize: 11, color: theme.colors.textMuted, marginTop: -theme.spacing(0.5), marginBottom: theme.spacing(0.5) },
   boardRow: {
     flexDirection: 'row', alignItems: 'center', paddingVertical: theme.spacing(1.25),
